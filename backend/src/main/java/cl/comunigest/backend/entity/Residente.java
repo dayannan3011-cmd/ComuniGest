@@ -16,6 +16,10 @@ public class Residente {
     @Column(nullable = false, length = 140)
     private String nombres;
 
+    @NotBlank
+    @Column(nullable = false, length = 140)
+    private String apellidos;
+
     @Column(length = 20)
     private String rut;
 
@@ -50,6 +54,14 @@ public class Residente {
 
     public void setNombres(String nombres) {
         this.nombres = nombres;
+    }
+
+    public String getApellidos() {
+        return apellidos;
+    }
+
+    public void setApellidos(String apellidos) {
+        this.apellidos = apellidos;
     }
 
     public String getRut() {

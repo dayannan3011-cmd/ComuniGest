@@ -144,6 +144,7 @@ export class ManagementComponent implements OnInit {
     ],
     residentes: [
       { key: 'nombres', label: 'Nombres', type: 'text', required: true },
+      { key: 'apellidos', label: 'Apellidos', type: 'text', required: true },
       { key: 'rut', label: 'RUT', type: 'text' },
       { key: 'telefono', label: 'Telefono', type: 'text' },
       { key: 'email', label: 'Email', type: 'email' },
