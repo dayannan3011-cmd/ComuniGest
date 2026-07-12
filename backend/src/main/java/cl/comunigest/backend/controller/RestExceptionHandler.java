@@ -1,11 +1,13 @@
 package cl.comunigest.backend.controller;
 
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,6 +18,21 @@ public class RestExceptionHandler {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Map<String, Object>> notFound(EntityNotFoundException exception) {
         return build(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(EntityExistsException.class)
+    public ResponseEntity<Map<String, Object>> conflict(EntityExistsException exception) {
+        return build(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> badRequest(IllegalArgumentException exception) {
+        return build(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> responseStatus(ResponseStatusException exception) {
+        return build(HttpStatus.valueOf(exception.getStatusCode().value()), exception.getReason());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

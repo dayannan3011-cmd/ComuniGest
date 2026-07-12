@@ -125,34 +125,59 @@ interface SelectOption {
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Detalle</th>
-                    <th>Acciones</th>
-                  </tr>
+                  @if (resource === 'usuarios') {
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Correo</th>
+                      <th>Perfil</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  } @else {
+                    <tr>
+                      <th>ID</th>
+                      <th>Detalle</th>
+                      <th>Acciones</th>
+                    </tr>
+                  }
                 </thead>
                 <tbody>
                   @for (item of items; track item['id']) {
-                    <tr>
-                      <td>{{ item['id'] }}</td>
-                      <td><pre>{{ item | json }}</pre></td>
-                      <td class="actions">
-                        <button type="button" class="secondary-button" (click)="edit(item)">Editar</button>
-                        @if (resource === 'turnos' && item['estado'] === 'ABIERTO') {
-                          <button type="button" (click)="patch(item['id'], 'cerrar', { observaciones: 'Cierre desde frontend' })">Cerrar</button>
-                        }
-                        @if (resource === 'visitas' && item['estado'] === 'INGRESADA') {
-                          <button type="button" (click)="patch(item['id'], 'salida')">Salida</button>
-                        }
-                        @if (resource === 'encomiendas' && item['estado'] === 'PENDIENTE') {
-                          <button type="button" (click)="patch(item['id'], 'entregar', { entregadoA: 'Residente' })">Entregar</button>
-                        }
-                        @if (resource === 'incidencias' && item['estado'] === 'ABIERTA') {
-                          <button type="button" (click)="patch(item['id'], 'cerrar')">Cerrar</button>
-                        }
-                        <button type="button" class="danger-button" (click)="remove(item)">Eliminar</button>
-                      </td>
-                    </tr>
+                    @if (resource === 'usuarios') {
+                      <tr>
+                        <td>{{ item['nombre'] }}</td>
+                        <td>{{ item['email'] }}</td>
+                        <td>{{ profileName(item) }}</td>
+                        <td>{{ item['activo'] ? 'ACTIVO' : 'INACTIVO' }}</td>
+                        <td class="actions">
+                          <button type="button" class="secondary-button" (click)="edit(item)">Editar</button>
+                          <button type="button" (click)="changeUsuarioEstado(item)">
+                            {{ item['activo'] ? 'Desactivar' : 'Reactivar' }}
+                          </button>
+                        </td>
+                      </tr>
+                    } @else {
+                      <tr>
+                        <td>{{ item['id'] }}</td>
+                        <td><pre>{{ item | json }}</pre></td>
+                        <td class="actions">
+                          <button type="button" class="secondary-button" (click)="edit(item)">Editar</button>
+                          @if (resource === 'turnos' && item['estado'] === 'ABIERTO') {
+                            <button type="button" (click)="patch(item['id'], 'cerrar', { observaciones: 'Cierre desde frontend' })">Cerrar</button>
+                          }
+                          @if (resource === 'visitas' && item['estado'] === 'INGRESADA') {
+                            <button type="button" (click)="patch(item['id'], 'salida')">Salida</button>
+                          }
+                          @if (resource === 'encomiendas' && item['estado'] === 'PENDIENTE') {
+                            <button type="button" (click)="patch(item['id'], 'entregar', { entregadoA: 'Residente' })">Entregar</button>
+                          }
+                          @if (resource === 'incidencias' && item['estado'] === 'ABIERTA') {
+                            <button type="button" (click)="patch(item['id'], 'cerrar')">Cerrar</button>
+                          }
+                          <button type="button" class="danger-button" (click)="remove(item)">Eliminar</button>
+                        </td>
+                      </tr>
+                    }
                   }
                 </tbody>
               </table>
@@ -198,6 +223,7 @@ export class ManagementComponent implements OnInit {
   items: Record<string, unknown>[] = [];
   reportEntries: Array<{ key: string; label: string; value: number }> = [];
   departmentOptions: SelectOption[] = [];
+  profileOptions: SelectOption[] = [];
   filteredDepartmentOptions: SelectOption[] = [];
   departmentSearch = '';
   departmentSuggestionsVisible = false;
@@ -216,11 +242,10 @@ export class ManagementComponent implements OnInit {
       { key: 'activo', label: 'Activo', type: 'checkbox' }
     ],
     usuarios: [
-      { key: 'nombre', label: 'Nombre', type: 'text', required: true },
-      { key: 'email', label: 'Email', type: 'email', required: true },
-      { key: 'password', label: 'Clave', type: 'password', required: true },
-      { key: 'perfilId', label: 'ID perfil', type: 'number', required: true },
-      { key: 'activo', label: 'Activo', type: 'checkbox' }
+      { key: 'nombre', label: 'Nombre completo', type: 'text', required: true, maxLength: 160 },
+      { key: 'email', label: 'Correo electrónico', type: 'email', required: true, maxLength: 160 },
+      { key: 'password', label: 'Contraseña inicial', type: 'password', required: true, maxLength: 255 },
+      { key: 'perfilId', label: 'Perfil', type: 'select', required: true }
     ],
     departamentos: [
       { key: 'torre', label: 'Torre', type: 'text', required: true, maxLength: 40 },
@@ -309,6 +334,9 @@ export class ManagementComponent implements OnInit {
     if (this.resource === 'residentes' && reloadRelations) {
       this.loadDepartmentOptions();
     }
+    if (this.resource === 'usuarios' && reloadRelations) {
+      this.loadProfileOptions();
+    }
     if (this.resource === 'reportes') {
       this.api.path<ReporteResumen>('reportes/resumen').subscribe({
         next: (summary) => {
@@ -359,7 +387,7 @@ export class ManagementComponent implements OnInit {
       ? this.api.update(this.resource, this.editingId, payload)
       : this.api.create(this.resource, payload);
 
-    if (this.resource === 'departamentos' || this.resource === 'residentes') {
+    if (this.resource === 'departamentos' || this.resource === 'residentes' || this.resource === 'usuarios') {
       request.pipe(
         switchMap(() => this.api.list<Record<string, unknown>>(this.resource))
       ).subscribe({
@@ -367,11 +395,14 @@ export class ManagementComponent implements OnInit {
           this.items = items;
           this.loading = false;
           this.resetForm();
-          this.success = wasEditing
-            ? 'Registro actualizado correctamente.'
-            : 'Registro guardado correctamente.';
+          this.success = this.resource === 'usuarios'
+            ? (wasEditing ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.')
+            : (wasEditing ? 'Registro actualizado correctamente.' : 'Registro guardado correctamente.');
           if (this.resource === 'residentes') {
             this.loadDepartmentOptions();
+          }
+          if (this.resource === 'usuarios') {
+            this.loadProfileOptions();
           }
           this.changeDetector.markForCheck();
         },
@@ -404,6 +435,10 @@ export class ManagementComponent implements OnInit {
     this.success = '';
     this.editingId = Number(item['id']);
     this.form.patchValue(this.toFormValue(item));
+    if (this.resource === 'usuarios') {
+      this.form.get('password')?.setValue('');
+      this.configureUsuarioPassword(false);
+    }
     if (this.resource === 'residentes') {
       this.syncDepartmentSearch();
     }
@@ -435,8 +470,42 @@ export class ManagementComponent implements OnInit {
     this.api.patch(this.resource, Number(id), action, payload).subscribe({ next: () => this.load() });
   }
 
+  profileName(item: Record<string, unknown>): string {
+    const perfil = item['perfil'];
+    return perfil && typeof perfil === 'object' && 'nombre' in perfil
+      ? String((perfil as { nombre?: unknown }).nombre ?? '')
+      : '';
+  }
+
+  changeUsuarioEstado(item: Record<string, unknown>): void {
+    const active = Boolean(item['activo']);
+    const action = active ? 'desactivar' : 'reactivar';
+    const name = String(item['nombre'] ?? '');
+    if (!window.confirm(`¿Seguro que deseas ${action} a ${name}?`)) {
+      return;
+    }
+
+    this.error = '';
+    this.success = '';
+    this.api.patch('usuarios', Number(item['id']), action).pipe(
+      switchMap(() => this.api.list<Record<string, unknown>>('usuarios'))
+    ).subscribe({
+      next: (items) => {
+        this.items = items;
+        this.success = active
+          ? 'Usuario desactivado correctamente.'
+          : 'Usuario reactivado correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.error = this.errorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
   optionsFor(field: FieldConfig): SelectOption[] {
-    return field.options ?? [];
+    return field.key === 'perfilId' ? this.profileOptions : field.options ?? [];
   }
 
   onDepartmentSearch(search: string): void {
@@ -473,6 +542,9 @@ export class ManagementComponent implements OnInit {
     this.departmentSuggestionsVisible = false;
     this.updateDepartmentSuggestions();
     this.form.reset(this.defaultValues());
+    if (this.resource === 'usuarios') {
+      this.configureUsuarioPassword(true);
+    }
   }
 
   private configureForm(): void {
@@ -504,6 +576,14 @@ export class ManagementComponent implements OnInit {
             : { departamentoInvalido: true };
         });
       }
+      if (field.key === 'perfilId') {
+        validators.push((control) => {
+          const id = Number(control.value);
+          return this.profileOptions.some((option) => Number(option.value) === id)
+            ? null
+            : { perfilInvalido: true };
+        });
+      }
       this.form.addControl(field.key, this.fb.control(this.defaultValue(field), validators));
     }
   }
@@ -529,6 +609,39 @@ export class ManagementComponent implements OnInit {
     });
   }
 
+  private loadProfileOptions(): void {
+    this.api.list<Record<string, unknown>>('perfiles').subscribe({
+      next: (profiles) => {
+        this.profileOptions = profiles
+          .filter((profile) => profile['activo'] === true)
+          .map((profile) => ({
+            value: Number(profile['id']),
+            label: String(profile['nombre'] ?? '')
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+        this.form.get('perfilId')?.updateValueAndValidity();
+        this.changeDetector.markForCheck();
+      },
+      error: () => {
+        this.error = 'No se pudieron cargar los perfiles.';
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private configureUsuarioPassword(required: boolean): void {
+    const control = this.form.get('password');
+    if (!control) {
+      return;
+    }
+    const validators: ValidatorFn[] = [Validators.maxLength(255)];
+    if (required) {
+      validators.unshift(Validators.required);
+    }
+    control.setValidators(validators);
+    control.updateValueAndValidity();
+  }
+
   private defaultValues(): Record<string, unknown> {
     return this.fields.reduce<Record<string, unknown>>((acc, field) => {
       acc[field.key] = this.defaultValue(field);
@@ -542,6 +655,10 @@ export class ManagementComponent implements OnInit {
 
   private toApiPayload(raw: Partial<Record<string, unknown>>): Record<string, unknown> {
     const payload: Record<string, unknown> = { ...raw };
+    if (this.resource === 'usuarios' && this.editingId !== null
+        && (payload['password'] === null || payload['password'] === undefined || payload['password'] === '')) {
+      delete payload['password'];
+    }
     this.mapRelation(payload, 'perfilId', 'perfil');
     this.mapRelation(payload, 'departamentoId', 'departamento');
     this.mapRelation(payload, 'usuarioId', 'usuario');

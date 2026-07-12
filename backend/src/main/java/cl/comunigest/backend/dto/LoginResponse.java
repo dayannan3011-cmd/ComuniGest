@@ -8,6 +8,7 @@ public class LoginResponse {
     private String nombre;
     private String email;
     private String perfil;
+    private Boolean activo;
     private String token;
 
     public LoginResponse(Usuario usuario) {
@@ -15,6 +16,7 @@ public class LoginResponse {
         this.nombre = usuario.getNombre();
         this.email = usuario.getEmail();
         this.perfil = usuario.getPerfil().getNombre();
+        this.activo = usuario.getActivo();
         this.token = "local-dev-token";
     }
 
@@ -32,6 +34,10 @@ public class LoginResponse {
 
     public String getPerfil() {
         return perfil;
+    }
+
+    public Boolean getActivo() {
+        return activo;
     }
 
     public String getToken() {

@@ -29,7 +29,7 @@ public class DataInitializer {
                 return perfilRepository.save(perfil);
             });
 
-            usuarioRepository.findByEmail("admin@comunigest.local").orElseGet(() -> {
+            usuarioRepository.findByEmailIgnoreCase("admin@comunigest.local").orElseGet(() -> {
                 Usuario usuario = new Usuario();
                 usuario.setNombre("Administrador ComuniGest");
                 usuario.setEmail("admin@comunigest.local");

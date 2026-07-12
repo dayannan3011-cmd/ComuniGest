@@ -56,5 +56,6 @@ export interface LoginResponse {
   nombre: string;
   email: string;
   perfil: string;
+  activo: boolean;
   token: string;
 }

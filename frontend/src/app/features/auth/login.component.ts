@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
@@ -52,7 +52,8 @@ export class LoginComponent {
   constructor(
     private readonly fb: FormBuilder,
     private readonly auth: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly changeDetector: ChangeDetectorRef
   ) {}
 
   submit(): void {
@@ -62,12 +63,21 @@ export class LoginComponent {
 
     this.loading = true;
     this.error = '';
+    this.changeDetector.markForCheck();
     const { email, password } = this.form.getRawValue();
     this.auth.login(email ?? '', password ?? '').subscribe({
-      next: () => this.router.navigateByUrl('/reportes'),
-      error: () => {
+      next: (response) => {
         this.loading = false;
-        this.error = 'No se pudo iniciar sesion. Verifica el backend y las credenciales.';
+        this.changeDetector.markForCheck();
+        const destination = response.perfil === 'ADMINISTRADOR' ? '/reportes' : '/turnos';
+        this.router.navigateByUrl(destination);
+      },
+      error: (response) => {
+        this.loading = false;
+        this.error = response?.error?.message === 'La cuenta se encuentra inactiva.'
+          ? 'La cuenta se encuentra inactiva.'
+          : 'No se pudo iniciar sesión. Verifica el backend y las credenciales.';
+        this.changeDetector.markForCheck();
       }
     });
   }

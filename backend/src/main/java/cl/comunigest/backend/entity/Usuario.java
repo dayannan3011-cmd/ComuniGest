@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "usuarios")
@@ -15,17 +16,19 @@ public class Usuario {
     private Long id;
 
     @NotBlank
-    @Column(nullable = false, length = 120)
+    @Size(max = 160)
+    @Column(nullable = false, length = 160)
     private String nombre;
 
     @Email
     @NotBlank
+    @Size(max = 160)
     @Column(nullable = false, unique = true, length = 160)
     private String email;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @NotBlank
-    @Column(nullable = false)
+    @Size(max = 255)
+    @Column(nullable = false, length = 255)
     private String password;
 
     @NotNull

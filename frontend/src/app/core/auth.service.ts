@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -9,6 +9,7 @@ import { LoginResponse } from './models';
 export class AuthService {
   private readonly storageKey = 'comunigest_user';
   private readonly tokenKey = 'comunigest_token';
+  readonly accessDeniedMessage = signal('');
 
   constructor(private readonly http: HttpClient, private readonly router: Router) {}
 
@@ -24,6 +25,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(this.storageKey);
     localStorage.removeItem(this.tokenKey);
+    this.clearAccessDenied();
     this.router.navigateByUrl('/login');
   }
 
@@ -34,5 +36,13 @@ export class AuthService {
   currentUser(): LoginResponse | null {
     const raw = localStorage.getItem(this.storageKey);
     return raw ? JSON.parse(raw) as LoginResponse : null;
+  }
+
+  showAccessDenied(): void {
+    this.accessDeniedMessage.set('Acceso denegado. No tienes permisos para acceder a esta sección.');
+  }
+
+  clearAccessDenied(): void {
+    this.accessDeniedMessage.set('');
   }
 }

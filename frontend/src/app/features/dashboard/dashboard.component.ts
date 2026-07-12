@@ -18,7 +18,7 @@ import { AuthService } from '../../core/auth.service';
         </div>
 
         <nav>
-          @for (item of navItems; track item.path) {
+          @for (item of visibleNavItems; track item.path) {
             <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
           }
         </nav>
@@ -33,6 +33,12 @@ import { AuthService } from '../../core/auth.service';
             <strong>{{ auth.currentUser()?.nombre }}</strong>
           </div>
         </header>
+        @if (auth.accessDeniedMessage()) {
+          <div class="form-error" role="alert">
+            {{ auth.accessDeniedMessage() }}
+            <button type="button" class="secondary-button" (click)="auth.clearAccessDenied()">Cerrar</button>
+          </div>
+        }
         <router-outlet />
       </section>
     </div>
@@ -40,16 +46,22 @@ import { AuthService } from '../../core/auth.service';
 })
 export class DashboardComponent {
   readonly navItems = [
-    { path: '/reportes', label: 'Reportes' },
-    { path: '/perfiles', label: 'Perfiles' },
-    { path: '/usuarios', label: 'Usuarios' },
-    { path: '/departamentos', label: 'Departamentos' },
-    { path: '/residentes', label: 'Residentes' },
-    { path: '/turnos', label: 'Turnos' },
-    { path: '/visitas', label: 'Visitas' },
-    { path: '/encomiendas', label: 'Encomiendas' },
-    { path: '/incidencias', label: 'Incidencias' }
+    { path: '/reportes', label: 'Reportes', adminOnly: true },
+    { path: '/perfiles', label: 'Perfiles', adminOnly: true },
+    { path: '/usuarios', label: 'Usuarios', adminOnly: true },
+    { path: '/departamentos', label: 'Departamentos', adminOnly: true },
+    { path: '/residentes', label: 'Residentes', adminOnly: true },
+    { path: '/turnos', label: 'Turnos', adminOnly: false },
+    { path: '/visitas', label: 'Visitas', adminOnly: false },
+    { path: '/encomiendas', label: 'Encomiendas', adminOnly: false },
+    { path: '/incidencias', label: 'Incidencias', adminOnly: false }
   ];
+
+  get visibleNavItems(): typeof this.navItems {
+    return this.auth.currentUser()?.perfil === 'ADMINISTRADOR'
+      ? this.navItems
+      : this.navItems.filter((item) => !item.adminOnly);
+  }
 
   constructor(public readonly auth: AuthService) {}
 }
