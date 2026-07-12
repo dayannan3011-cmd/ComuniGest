@@ -1,8 +1,12 @@
 package cl.comunigest.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "residentes")
@@ -13,23 +17,31 @@ public class Residente {
     private Long id;
 
     @NotBlank
-    @Column(nullable = false, length = 140)
+    @Size(max = 100)
+    @Column(nullable = false, length = 100)
     private String nombres;
 
     @NotBlank
-    @Column(nullable = false, length = 140)
+    @Size(max = 100)
+    @Column(nullable = false, length = 100)
     private String apellidos;
 
+    @Size(max = 20)
     @Column(length = 20)
     private String rut;
 
-    @Column(length = 40)
+    @Size(max = 30)
+    @Column(length = 30)
     private String telefono;
 
+    @Email
+    @Size(max = 160)
     @Column(length = 160)
     private String email;
 
-    @Column(nullable = false, length = 40)
+    @NotBlank
+    @Size(max = 20)
+    @Column(nullable = false, length = 20)
     private String tipoResidente = "PROPIETARIO";
 
     @NotNull
@@ -37,8 +49,27 @@ public class Residente {
     @JoinColumn(name = "departamento_id", nullable = false)
     private Departamento departamento;
 
+    @NotNull
     @Column(nullable = false)
     private Boolean activo = true;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime creadoEn;
+
+    @Column(nullable = false)
+    private LocalDateTime actualizadoEn;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        creadoEn = now;
+        actualizadoEn = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        actualizadoEn = LocalDateTime.now();
+    }
 
     public Long getId() {
         return id;
@@ -110,5 +141,13 @@ public class Residente {
 
     public void setActivo(Boolean activo) {
         this.activo = activo;
+    }
+
+    public LocalDateTime getCreadoEn() {
+        return creadoEn;
+    }
+
+    public LocalDateTime getActualizadoEn() {
+        return actualizadoEn;
     }
 }

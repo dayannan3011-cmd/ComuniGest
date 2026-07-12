@@ -2,6 +2,9 @@ package cl.comunigest.backend.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "departamentos", uniqueConstraints = {
@@ -14,20 +17,43 @@ public class Departamento {
     private Long id;
 
     @NotBlank
+    @Size(max = 40)
     @Column(nullable = false, length = 40)
     private String torre;
 
     @NotBlank
+    @Size(max = 40)
     @Column(nullable = false, length = 40)
     private String numero;
 
-    private Integer piso;
+    private Short piso;
 
-    @Column(nullable = false, length = 40)
+    @NotBlank
+    @Size(max = 20)
+    @Column(nullable = false, length = 20)
     private String estado = "HABITADO";
 
-    @Column(length = 255)
+    @Size(max = 500)
+    @Column(length = 500)
     private String observaciones;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime creadoEn;
+
+    @Column(nullable = false)
+    private LocalDateTime actualizadoEn;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        creadoEn = now;
+        actualizadoEn = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        actualizadoEn = LocalDateTime.now();
+    }
 
     public Long getId() {
         return id;
@@ -53,11 +79,11 @@ public class Departamento {
         this.numero = numero;
     }
 
-    public Integer getPiso() {
+    public Short getPiso() {
         return piso;
     }
 
-    public void setPiso(Integer piso) {
+    public void setPiso(Short piso) {
         this.piso = piso;
     }
 
@@ -75,5 +101,13 @@ public class Departamento {
 
     public void setObservaciones(String observaciones) {
         this.observaciones = observaciones;
+    }
+
+    public LocalDateTime getCreadoEn() {
+        return creadoEn;
+    }
+
+    public LocalDateTime getActualizadoEn() {
+        return actualizadoEn;
     }
 }

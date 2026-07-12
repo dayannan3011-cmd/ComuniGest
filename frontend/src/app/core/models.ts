@@ -25,17 +25,22 @@ export interface Departamento {
   piso?: number;
   estado?: string;
   observaciones?: string;
+  creadoEn?: string;
+  actualizadoEn?: string;
 }
 
 export interface Residente {
   id?: number;
   nombres: string;
+  apellidos: string;
   rut?: string;
   telefono?: string;
   email?: string;
   tipoResidente?: string;
   departamento?: Departamento | IdRef;
   activo?: boolean;
+  creadoEn?: string;
+  actualizadoEn?: string;
 }
 
 export interface ReporteResumen {
