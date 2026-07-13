@@ -7,6 +7,7 @@ import cl.comunigest.backend.repository.UsuarioRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -16,11 +17,14 @@ public class UsuarioService extends CrudService<Usuario> {
 
     private final UsuarioRepository repository;
     private final PerfilRepository perfilRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository repository, PerfilRepository perfilRepository) {
+    public UsuarioService(UsuarioRepository repository, PerfilRepository perfilRepository,
+                          PasswordEncoder passwordEncoder) {
         super(repository);
         this.repository = repository;
         this.perfilRepository = perfilRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Usuario autenticar(String email, String password) {
@@ -30,7 +34,7 @@ public class UsuarioService extends CrudService<Usuario> {
         if (!Boolean.TRUE.equals(usuario.getActivo())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El usuario se encuentra inactivo.");
         }
-        if (!usuario.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Correo o clave incorrectos.");
         }
         return usuario;
@@ -42,6 +46,7 @@ public class UsuarioService extends CrudService<Usuario> {
             throw new IllegalArgumentException("La contraseña inicial es obligatoria.");
         }
         prepareCommonData(entity, null);
+        entity.setPassword(passwordEncoder.encode(entity.getPassword()));
         entity.setActivo(true);
         return repository.save(entity);
     }
@@ -54,7 +59,7 @@ public class UsuarioService extends CrudService<Usuario> {
         current.setEmail(changes.getEmail());
         current.setPerfil(changes.getPerfil());
         if (changes.getPassword() != null && !changes.getPassword().isBlank()) {
-            current.setPassword(changes.getPassword());
+            current.setPassword(passwordEncoder.encode(changes.getPassword()));
         }
         return repository.save(current);
     }

@@ -208,7 +208,7 @@ INSERT INTO usuarios (nombre, email, password, perfil_id, activo)
 SELECT
   'Administrador ComuniGest',
   'admin@comunigest.local',
-  'admin123',
+  '$2a$10$4T4hPeieESBFRKEx2ESzRe6PHzW4yLj9Qj6mYg.57MfYO8hlNltfy',
   p.id,
   1
 FROM perfiles p
