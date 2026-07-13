@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "comunigest.jwt.secret=ComuniGest-integration-test-secret-with-at-least-32-bytes-2026"
 })
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ActiveProfiles("h2")
 class SecurityIntegrationTest {
 
     private static final String CONSERJE_EMAIL = "conserje@comunigest.local";

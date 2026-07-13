@@ -28,10 +28,9 @@ ComuniGest es una aplicación web para la gestión administrativa y operativa de
 
 ### Base de datos
 
-- H2 para desarrollo y demostración local
-- Esquema preparado para MySQL
+- MySQL como base de datos predeterminada
+- H2 como perfil opcional para desarrollo y pruebas
 - Archivo `comunigest_mysql_schema.sql`
-- Persistencia local almacenada en `backend/data`
 
 ## Estructura del proyecto
 
@@ -182,12 +181,19 @@ Para ejecutar el proyecto se requiere:
 - Node.js
 - npm
 - Angular CLI o ejecución mediante `npx`
-
-MySQL solo es necesario para realizar la migración definitiva desde H2.
+- MySQL 8 o superior
 
 ## Ejecución del backend
 
-Desde la carpeta principal del proyecto:
+Primero se debe crear el esquema con `comunigest_mysql_schema.sql` y definir la contraseña de MySQL. En Windows PowerShell:
+
+```powershell
+$env:COMUNIGEST_DB_PASSWORD="contraseña-de-mysql"
+```
+
+Opcionalmente se pueden definir `COMUNIGEST_DB_USERNAME` (por defecto, `root`) y `COMUNIGEST_DB_URL` (por defecto, `jdbc:mysql://localhost:3306/comunigest_db`).
+
+Luego, desde la carpeta principal del proyecto:
 
 ```bash
 cd backend
@@ -236,7 +242,12 @@ frontend/src/environments/environment.ts
 
 ## Base de datos H2
 
-Durante el desarrollo y la demostración local se utiliza una base de datos H2 persistente.
+H2 se mantiene como alternativa local y para las pruebas automatizadas. Para iniciar el backend con este perfil:
+
+```bash
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=h2
+```
 
 Los archivos se almacenan en:
 
@@ -423,7 +434,7 @@ Actualmente se encuentran implementados:
 - Backend operativo en el puerto `8080`
 - Frontend operativo en el puerto `4200`
 - Comunicación mediante API REST
-- Persistencia local mediante H2
+- Persistencia mediante MySQL
 - Inicio y cierre de sesión
 - Contraseñas cifradas con BCrypt
 - Autenticación mediante JWT
@@ -440,11 +451,10 @@ Actualmente se encuentran implementados:
 - Reportes
 - Validaciones en frontend y backend
 - Pruebas automatizadas de autenticación y seguridad
-- Esquema SQL preparado para MySQL
+- Perfil H2 opcional para desarrollo y pruebas
 
 ## Mejoras futuras
 
-- Migración definitiva desde H2 a MySQL
 - Despliegue en hosting
 - Configuración HTTPS
 - Recuperación de contraseña mediante correo electrónico
@@ -464,9 +474,9 @@ El archivo:
 comunigest_mysql_schema.sql
 ```
 
-contiene la estructura SQL preparada para MySQL.
+contiene la estructura SQL utilizada por MySQL.
 
-La base de datos prevista es:
+La base de datos predeterminada es:
 
 ```text
 comunigest_db
