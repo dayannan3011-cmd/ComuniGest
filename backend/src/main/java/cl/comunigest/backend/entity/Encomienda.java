@@ -19,6 +19,10 @@ public class Encomienda {
     private Long id;
 
     @NotBlank
+    @Column(nullable = false, length = 160)
+    private String destinatario;
+
+    @NotBlank
     @Column(nullable = false, length = 255)
     private String descripcion;
 
@@ -28,6 +32,9 @@ public class Encomienda {
     @Column(length = 140)
     private String recibidoPor;
 
+    @Column(length = 160)
+    private String empresaRepartidor;
+
     @Column(length = 140)
     private String entregadoA;
 
@@ -35,6 +42,14 @@ public class Encomienda {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "departamento_id", nullable = false)
     private Departamento departamento;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "turno_recepcion_id")
+    private Turno turnoRecepcion;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "turno_entrega_id")
+    private Turno turnoEntrega;
 
     @Column(nullable = false)
     private LocalDateTime fechaRecepcion = LocalDateTime.now();
@@ -52,6 +67,9 @@ public class Encomienda {
     public void setId(Long id) {
         this.id = id;
     }
+
+    public String getDestinatario() { return destinatario; }
+    public void setDestinatario(String destinatario) { this.destinatario = destinatario; }
 
     public String getDescripcion() {
         return descripcion;
@@ -77,6 +95,9 @@ public class Encomienda {
         this.recibidoPor = recibidoPor;
     }
 
+    public String getEmpresaRepartidor() { return empresaRepartidor; }
+    public void setEmpresaRepartidor(String empresaRepartidor) { this.empresaRepartidor = empresaRepartidor; }
+
     public String getEntregadoA() {
         return entregadoA;
     }
@@ -92,6 +113,11 @@ public class Encomienda {
     public void setDepartamento(Departamento departamento) {
         this.departamento = departamento;
     }
+
+    public Turno getTurnoRecepcion() { return turnoRecepcion; }
+    public void setTurnoRecepcion(Turno turnoRecepcion) { this.turnoRecepcion = turnoRecepcion; }
+    public Turno getTurnoEntrega() { return turnoEntrega; }
+    public void setTurnoEntrega(Turno turnoEntrega) { this.turnoEntrega = turnoEntrega; }
 
     public LocalDateTime getFechaRecepcion() {
         return fechaRecepcion;

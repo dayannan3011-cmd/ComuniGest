@@ -52,7 +52,7 @@ interface SelectOption {
           }
         </section>
       } @else {
-        <section class="editor-layout">
+        <section class="editor-layout" [class.encomiendas-consulta]="resource === 'encomiendas' && !isConserje">
           @if (resource === 'turnos') {
             <section class="panel form-grid" [formGroup]="form">
               <h2>Control de turno</h2>
@@ -137,6 +137,46 @@ interface SelectOption {
                 <p>{{ success }}</p>
               }
             </form>
+          } @else if (resource === 'encomiendas') {
+            @if (isConserje) {
+            <form [formGroup]="form" (ngSubmit)="registrarEncomienda()" class="panel form-grid">
+              <h2>{{ isConserje ? 'Registrar encomienda' : 'Consulta de encomiendas' }}</h2>
+              @if (isConserje) {
+                <label>Destinatario
+                  <input type="text" formControlName="destinatario" maxlength="160">
+                </label>
+                <label>Departamento
+                  <div role="combobox" aria-haspopup="listbox" [attr.aria-expanded]="departmentSuggestionsVisible">
+                    <input type="search" placeholder="Buscar por torre o número" autocomplete="off"
+                      [value]="departmentSearch" (focus)="showDepartmentSuggestions()"
+                      (input)="onDepartmentSearch($any($event.target).value)">
+                    @if (departmentSuggestionsVisible) {
+                      <div role="listbox">
+                        @for (option of filteredDepartmentOptions; track option.value) {
+                          <button type="button" role="option" (mousedown)="$event.preventDefault()"
+                            (click)="selectDepartment(option)">{{ option.label }}</button>
+                        } @empty { <p>No se encontraron departamentos</p> }
+                      </div>
+                    }
+                  </div>
+                </label>
+                <label>Descripción
+                  <textarea formControlName="descripcion" maxlength="255" rows="3"
+                    placeholder="Ej.: Sobre, caja pequeña, paquete grande o electrodoméstico"></textarea>
+                </label>
+                <label>Empresa o repartidor
+                  <input type="text" formControlName="empresaRepartidor" maxlength="160">
+                </label>
+                <button type="submit" [disabled]="form.invalid || loading">
+                  {{ loading ? 'Registrando...' : 'Registrar encomienda' }}
+                </button>
+              } @else {
+                <p>Historial completo de encomiendas. El Administrador no registra recepciones ni entregas.</p>
+              }
+              @if (error) { <p class="form-error">{{ error }}</p> }
+              @if (success) { <p>{{ success }}</p> }
+            </form>
+            }
           } @else {
           <form [formGroup]="form" (ngSubmit)="save()" class="panel form-grid">
             <h2>{{ editingId ? 'Editar registro' : 'Nuevo registro' }}</h2>
@@ -209,6 +249,16 @@ interface SelectOption {
 
           <section class="panel table-panel">
             <h2>Registros</h2>
+            @if (resource === 'encomiendas') {
+              <label>
+                Estado
+                <select [value]="encomiendaEstado" (change)="onEncomiendaEstadoChange($any($event.target).value)">
+                  <option value="TODAS">Todas</option>
+                  <option value="PENDIENTE">Pendientes</option>
+                  <option value="ENTREGADA">Entregadas</option>
+                </select>
+              </label>
+            }
             <div class="table-wrap">
               <table>
                 <thead>
@@ -231,6 +281,13 @@ interface SelectOption {
                       <th>Estado</th>
                       <th>Acciones</th>
                     </tr>
+                  } @else if (resource === 'encomiendas') {
+                    <tr>
+                      <th>Destinatario</th><th>Departamento</th><th>Descripción</th>
+                      <th>Empresa o repartidor</th><th>Fecha y hora de recepción</th><th>Recibida por</th>
+                      <th>Fecha y hora de entrega</th><th>Entregada por</th><th>Entregada a</th>
+                      <th>Estado</th><th>Acciones</th>
+                    </tr>
                   } @else if (resource === 'usuarios') {
                     <tr>
                       <th>Nombre</th>
@@ -248,7 +305,7 @@ interface SelectOption {
                   }
                 </thead>
                 <tbody>
-                  @for (item of items; track item['id']) {
+                  @for (item of visibleItems; track item['id']) {
                     @if (resource === 'turnos') {
                       <tr>
                         <td>{{ turnoUsuarioNombre(item) }}</td>
@@ -278,6 +335,24 @@ interface SelectOption {
                           } @else {
                             <span>—</span>
                           }
+                        </td>
+                      </tr>
+                    } @else if (resource === 'encomiendas') {
+                      <tr>
+                        <td>{{ item['destinatario'] }}</td>
+                        <td>{{ encomiendaDepartamento(item) }}</td>
+                        <td>{{ item['descripcion'] }}</td>
+                        <td>{{ item['empresaRepartidor'] || '—' }}</td>
+                        <td>{{ $any(item['fechaRecepcion']) | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td>{{ encomiendaConserje(item, 'turnoRecepcion') }}</td>
+                        <td>{{ item['fechaEntrega'] ? ($any(item['fechaEntrega']) | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</td>
+                        <td>{{ item['fechaEntrega'] ? encomiendaConserje(item, 'turnoEntrega') : '—' }}</td>
+                        <td>{{ item['entregadoA'] || '—' }}</td>
+                        <td>{{ item['estado'] }}</td>
+                        <td class="actions">
+                          @if (isConserje && item['estado'] === 'PENDIENTE') {
+                            <button type="button" (click)="registrarEntregaEncomienda(item)">Registrar entrega</button>
+                          } @else { <span>—</span> }
                         </td>
                       </tr>
                     } @else if (resource === 'usuarios') {
@@ -325,6 +400,10 @@ interface SelectOption {
     </main>
   `,
   styles: [`
+    .editor-layout.encomiendas-consulta {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
     [role="combobox"] {
       position: relative;
     }
@@ -370,6 +449,7 @@ export class ManagementComponent implements OnInit {
   refreshing = false;
   error = '';
   success = '';
+  encomiendaEstado: 'TODAS' | 'PENDIENTE' | 'ENTREGADA' = 'TODAS';
 
   readonly form: UntypedFormGroup = this.fb.group({});
 
@@ -379,6 +459,17 @@ export class ManagementComponent implements OnInit {
 
   get currentUserName(): string {
     return this.auth.currentUser()?.nombre ?? '';
+  }
+
+  get visibleItems(): Record<string, unknown>[] {
+    if (this.resource !== 'encomiendas' || this.encomiendaEstado === 'TODAS') return this.items;
+    return this.items.filter((item) => item['estado'] === this.encomiendaEstado);
+  }
+
+  onEncomiendaEstadoChange(value: string): void {
+    if (value === 'PENDIENTE' || value === 'ENTREGADA' || value === 'TODAS') {
+      this.encomiendaEstado = value;
+    }
   }
 
   private readonly fieldMap: Record<string, FieldConfig[]> = {
@@ -432,10 +523,10 @@ export class ManagementComponent implements OnInit {
       { key: 'departamentoId', label: 'Departamento', type: 'select', required: true }
     ],
     encomiendas: [
-      { key: 'descripcion', label: 'Descripcion', type: 'textarea', required: true },
-      { key: 'codigoRecepcion', label: 'Codigo recepcion', type: 'text' },
-      { key: 'recibidoPor', label: 'Recibido por', type: 'text' },
-      { key: 'departamentoId', label: 'ID departamento', type: 'number', required: true }
+      { key: 'destinatario', label: 'Destinatario', type: 'text', required: true, maxLength: 160 },
+      { key: 'departamentoId', label: 'Departamento', type: 'select', required: true },
+      { key: 'descripcion', label: 'Descripción', type: 'textarea', required: true, maxLength: 255 },
+      { key: 'empresaRepartidor', label: 'Empresa o repartidor', type: 'text', maxLength: 160 }
     ],
     incidencias: [
       { key: 'titulo', label: 'Titulo', type: 'text', required: true },
@@ -473,7 +564,7 @@ export class ManagementComponent implements OnInit {
 
   load(showRefreshFeedback = false, reloadRelations = true): void {
     this.error = '';
-    if ((this.resource === 'residentes' || this.resource === 'visitas') && reloadRelations) {
+    if ((this.resource === 'residentes' || this.resource === 'visitas' || this.resource === 'encomiendas') && reloadRelations) {
       this.loadDepartmentOptions();
     }
     if (this.resource === 'usuarios' && reloadRelations) {
@@ -485,6 +576,10 @@ export class ManagementComponent implements OnInit {
     }
     if (this.resource === 'visitas') {
       this.loadVisitas(showRefreshFeedback);
+      return;
+    }
+    if (this.resource === 'encomiendas') {
+      this.loadEncomiendas(showRefreshFeedback);
       return;
     }
     if (this.resource === 'reportes') {
@@ -736,6 +831,87 @@ export class ManagementComponent implements OnInit {
     });
   }
 
+  registrarEncomienda(): void {
+    const user = this.auth.currentUser();
+    if (!user) {
+      this.error = 'El usuario no existe.';
+      return;
+    }
+    if (this.form.invalid) return;
+    const raw = this.form.getRawValue();
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+    this.api.create<Record<string, unknown>>('encomiendas/recepcion', {
+      usuarioId: user.id,
+      departamentoId: Number(raw['departamentoId']),
+      destinatario: raw['destinatario'],
+      descripcion: raw['descripcion'],
+      empresaRepartidor: raw['empresaRepartidor'] || null
+    }).pipe(switchMap(() => this.encomiendaListRequest())).subscribe({
+      next: (items) => {
+        this.items = items;
+        this.loading = false;
+        this.resetForm();
+        this.success = 'Encomienda registrada correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = this.errorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  registrarEntregaEncomienda(item: Record<string, unknown>): void {
+    const user = this.auth.currentUser();
+    if (!user) {
+      this.error = 'El usuario no existe.';
+      return;
+    }
+    const destinatario = String(item['destinatario'] ?? '');
+    const departamento = this.encomiendaDepartamento(item);
+    if (!window.confirm(`¿Registrar la entrega para ${destinatario}, departamento ${departamento}?`)) return;
+    const entregadoA = window.prompt('Entregado a');
+    if (entregadoA === null) return;
+    if (!entregadoA.trim()) {
+      this.error = 'Debes indicar quién retira la encomienda.';
+      return;
+    }
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+    this.api.patch<Record<string, unknown>>('encomiendas', Number(item['id']), 'entregar', {
+      usuarioId: user.id,
+      entregadoA
+    }).pipe(switchMap(() => this.encomiendaListRequest())).subscribe({
+      next: (items) => {
+        this.items = items;
+        this.loading = false;
+        this.success = 'Entrega registrada correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = this.errorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  encomiendaDepartamento(item: Record<string, unknown>): string {
+    return this.visitaDepartamento(item);
+  }
+
+  encomiendaConserje(item: Record<string, unknown>, turnoKey: string): string {
+    const turno = item[turnoKey];
+    if (!turno || typeof turno !== 'object' || !('usuario' in turno)) return '—';
+    const usuario = (turno as { usuario?: unknown }).usuario;
+    return usuario && typeof usuario === 'object' && 'nombre' in usuario
+      ? String((usuario as { nombre?: unknown }).nombre ?? '—') : '—';
+  }
+
   registrarSalidaVisita(item: Record<string, unknown>): void {
     const user = this.auth.currentUser();
     if (!user) {
@@ -842,6 +1018,7 @@ export class ManagementComponent implements OnInit {
     const normalizedSearch = search.trim().toLocaleLowerCase();
     this.filteredDepartmentOptions = normalizedSearch
       ? this.departmentOptions.filter((option) => option.label.toLocaleLowerCase().includes(normalizedSearch))
+          .slice(0, 8)
       : [];
   }
 
@@ -949,6 +1126,27 @@ export class ManagementComponent implements OnInit {
         this.changeDetector.markForCheck();
       }
     });
+  }
+
+  private loadEncomiendas(showRefreshFeedback: boolean): void {
+    this.encomiendaListRequest().subscribe({
+      next: (items) => {
+        this.items = items;
+        this.finishRefresh(showRefreshFeedback, true);
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.error = this.errorMessage(error);
+        this.finishRefresh(showRefreshFeedback, false);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private encomiendaListRequest(): Observable<Record<string, unknown>[]> {
+    return this.isConserje
+      ? this.api.path<Record<string, unknown>[]>('encomiendas/mes-actual')
+      : this.api.list<Record<string, unknown>>('encomiendas');
   }
 
   private visitaListRequest(): Observable<Record<string, unknown>[]> {

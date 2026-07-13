@@ -125,20 +125,34 @@ CREATE TABLE IF NOT EXISTS visitas (
 
 CREATE TABLE IF NOT EXISTS encomiendas (
   id BIGINT NOT NULL AUTO_INCREMENT,
+  destinatario VARCHAR(160) NOT NULL,
   descripcion VARCHAR(255) NOT NULL,
+  empresa_repartidor VARCHAR(160) NULL,
   codigo_recepcion VARCHAR(80) NULL,
   recibido_por VARCHAR(140) NULL,
   entregado_a VARCHAR(140) NULL,
   departamento_id BIGINT NOT NULL,
+  turno_recepcion_id BIGINT NULL,
+  turno_entrega_id BIGINT NULL,
   fecha_recepcion DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   fecha_entrega DATETIME(6) NULL,
   estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
   PRIMARY KEY (id),
   KEY idx_encomiendas_departamento_id (departamento_id),
+  KEY idx_encomiendas_turno_recepcion_id (turno_recepcion_id),
+  KEY idx_encomiendas_turno_entrega_id (turno_entrega_id),
   KEY idx_encomiendas_estado (estado),
   CONSTRAINT chk_encomiendas_estado CHECK (estado IN ('PENDIENTE', 'ENTREGADA')),
   CONSTRAINT fk_encomiendas_departamentos
     FOREIGN KEY (departamento_id) REFERENCES departamentos (id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_encomiendas_turno_recepcion
+    FOREIGN KEY (turno_recepcion_id) REFERENCES turnos (id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_encomiendas_turno_entrega
+    FOREIGN KEY (turno_entrega_id) REFERENCES turnos (id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
