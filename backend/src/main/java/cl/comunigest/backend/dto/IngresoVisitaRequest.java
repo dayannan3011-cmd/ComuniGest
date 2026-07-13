@@ -7,9 +7,6 @@ import jakarta.validation.constraints.Size;
 public class IngresoVisitaRequest {
 
     @NotNull
-    private Long usuarioId;
-
-    @NotNull
     private Long departamentoId;
 
     @NotBlank
@@ -23,8 +20,6 @@ public class IngresoVisitaRequest {
     @Size(max = 20)
     private String patente;
 
-    public Long getUsuarioId() { return usuarioId; }
-    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
     public Long getDepartamentoId() { return departamentoId; }
     public void setDepartamentoId(Long departamentoId) { this.departamentoId = departamentoId; }
     public String getNombreVisitante() { return nombreVisitante; }

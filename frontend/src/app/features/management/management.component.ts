@@ -867,9 +867,7 @@ export class ManagementComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.success = '';
-    const payload = {
-      usuarioId: user.id
-    };
+    const payload = {};
     this.api.create<Record<string, unknown>>('turnos/iniciar', payload).pipe(
       switchMap(() => this.turnoListRequest())
     ).subscribe({
@@ -902,9 +900,7 @@ export class ManagementComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.success = '';
-    const payload = {
-      usuarioId: user.id
-    };
+    const payload = {};
     this.api.patch<Record<string, unknown>>(
       'turnos', Number(this.turnoEnCurso['id']), 'cerrar', payload
     ).pipe(
@@ -948,7 +944,6 @@ export class ManagementComponent implements OnInit {
     this.success = '';
     const raw = this.form.getRawValue();
     const payload = {
-      usuarioId: user.id,
       departamentoId: Number(raw['departamentoId']),
       nombreVisitante: raw['nombreVisitante'],
       documento: raw['documento'],
@@ -984,7 +979,6 @@ export class ManagementComponent implements OnInit {
     this.error = '';
     this.success = '';
     this.api.create<Record<string, unknown>>('encomiendas/recepcion', {
-      usuarioId: user.id,
       departamentoId: Number(raw['departamentoId']),
       destinatario: raw['destinatario'],
       descripcion: raw['descripcion'],
@@ -1024,7 +1018,6 @@ export class ManagementComponent implements OnInit {
     this.error = '';
     this.success = '';
     this.api.patch<Record<string, unknown>>('encomiendas', Number(item['id']), 'entregar', {
-      usuarioId: user.id,
       entregadoA
     }).pipe(switchMap(() => this.encomiendaListRequest())).subscribe({
       next: (items) => {
@@ -1062,7 +1055,6 @@ export class ManagementComponent implements OnInit {
     this.error = '';
     this.success = '';
     this.api.create<Record<string, unknown>>('incidencias/registro', {
-      usuarioId: user.id,
       titulo: raw['titulo'],
       descripcion: raw['descripcion'],
       categoria: raw['categoria'],
@@ -1089,9 +1081,8 @@ export class ManagementComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.success = '';
-    this.api.patch<Record<string, unknown>>('incidencias', Number(item['id']), 'iniciar-gestion', {
-      usuarioId: user.id
-    }).pipe(switchMap(() => this.incidenciaListRequest())).subscribe({
+    this.api.patch<Record<string, unknown>>('incidencias', Number(item['id']), 'iniciar-gestion', {})
+      .pipe(switchMap(() => this.incidenciaListRequest())).subscribe({
       next: (items) => {
         this.items = items;
         this.loading = false;
@@ -1122,7 +1113,6 @@ export class ManagementComponent implements OnInit {
     this.error = '';
     this.success = '';
     this.api.patch<Record<string, unknown>>('incidencias', id, 'resolver', {
-      usuarioId: user.id,
       resolucion
     }).pipe(switchMap(() => this.incidenciaListRequest())).subscribe({
       next: (items) => {
@@ -1166,7 +1156,7 @@ export class ManagementComponent implements OnInit {
     this.error = '';
     this.success = '';
     this.api.patch<Record<string, unknown>>(
-      'visitas', Number(item['id']), 'salida', { usuarioId: user.id }
+      'visitas', Number(item['id']), 'salida', {}
     ).pipe(
       switchMap(() => this.visitaListRequest())
     ).subscribe({

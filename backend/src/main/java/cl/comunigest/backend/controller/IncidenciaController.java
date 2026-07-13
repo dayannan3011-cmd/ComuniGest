@@ -5,10 +5,12 @@ import cl.comunigest.backend.dto.RegistroIncidenciaRequest;
 import cl.comunigest.backend.dto.ResolucionIncidenciaRequest;
 import cl.comunigest.backend.entity.Incidencia;
 import cl.comunigest.backend.service.IncidenciaService;
+import cl.comunigest.backend.security.AuthenticatedUser;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,27 +27,32 @@ public class IncidenciaController {
     public IncidenciaController(IncidenciaService service) { this.service = service; }
 
     @GetMapping
-    public List<Incidencia> historial() { return service.findAll(); }
+    public List<Incidencia> historial(@AuthenticationPrincipal AuthenticatedUser user) {
+        return "ADMINISTRADOR".equalsIgnoreCase(user.perfil()) ? service.findAll() : service.findMesActual();
+    }
 
     @GetMapping("/mes-actual")
     public List<Incidencia> mesActual() { return service.findMesActual(); }
 
     @PostMapping("/registro")
-    public Incidencia registrar(@Valid @RequestBody RegistroIncidenciaRequest request) {
-        return service.registrar(request.getUsuarioId(), request.getTitulo(), request.getDescripcion(),
+    public Incidencia registrar(@Valid @RequestBody RegistroIncidenciaRequest request,
+                                @AuthenticationPrincipal AuthenticatedUser user) {
+        return service.registrar(user.id(), request.getTitulo(), request.getDescripcion(),
                 request.getCategoria(), request.getCriticidad());
     }
 
     @PatchMapping("/{id}/iniciar-gestion")
     public Incidencia iniciarGestion(@PathVariable Long id,
-                                     @Valid @RequestBody GestionIncidenciaRequest request) {
-        return service.iniciarGestion(id, request.getUsuarioId());
+                                     @Valid @RequestBody GestionIncidenciaRequest request,
+                                     @AuthenticationPrincipal AuthenticatedUser user) {
+        return service.iniciarGestion(id, user.id());
     }
 
     @PatchMapping("/{id}/resolver")
     public Incidencia resolver(@PathVariable Long id,
-                               @Valid @RequestBody ResolucionIncidenciaRequest request) {
-        return service.resolver(id, request.getUsuarioId(), request.getResolucion());
+                               @Valid @RequestBody ResolucionIncidenciaRequest request,
+                               @AuthenticationPrincipal AuthenticatedUser user) {
+        return service.resolver(id, user.id(), request.getResolucion());
     }
 
     @ExceptionHandler(DataAccessException.class)

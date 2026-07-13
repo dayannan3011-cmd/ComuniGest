@@ -7,9 +7,6 @@ import jakarta.validation.constraints.Size;
 public class RecepcionEncomiendaRequest {
 
     @NotNull
-    private Long usuarioId;
-
-    @NotNull
     private Long departamentoId;
 
     @NotBlank(message = "Debes indicar el destinatario de la encomienda.")
@@ -23,8 +20,6 @@ public class RecepcionEncomiendaRequest {
     @Size(max = 160)
     private String empresaRepartidor;
 
-    public Long getUsuarioId() { return usuarioId; }
-    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
     public Long getDepartamentoId() { return departamentoId; }
     public void setDepartamentoId(Long departamentoId) { this.departamentoId = departamentoId; }
     public String getDestinatario() { return destinatario; }

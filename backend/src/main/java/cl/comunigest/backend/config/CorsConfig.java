@@ -13,7 +13,8 @@ import java.util.List;
 public class CorsConfig {
 
     @Bean
-    public CorsFilter corsFilter(@Value("${comunigest.cors.allowed-origins}") String allowedOrigins) {
+    public UrlBasedCorsConfigurationSource corsConfigurationSource(
+            @Value("${comunigest.cors.allowed-origins}") String allowedOrigins) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
@@ -22,6 +23,11 @@ public class CorsConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);
-        return new CorsFilter(source);
+        return source;
+    }
+
+    @Bean
+    public CorsFilter corsFilter(UrlBasedCorsConfigurationSource corsConfigurationSource) {
+        return new CorsFilter(corsConfigurationSource);
     }
 }

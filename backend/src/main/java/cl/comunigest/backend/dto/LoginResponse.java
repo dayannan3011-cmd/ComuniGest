@@ -11,13 +11,13 @@ public class LoginResponse {
     private Boolean activo;
     private String token;
 
-    public LoginResponse(Usuario usuario) {
+    public LoginResponse(Usuario usuario, String token) {
         this.id = usuario.getId();
         this.nombre = usuario.getNombre();
         this.email = usuario.getEmail();
         this.perfil = usuario.getPerfil().getNombre();
         this.activo = usuario.getActivo();
-        this.token = "local-dev-token";
+        this.token = token;
     }
 
     public Long getId() {

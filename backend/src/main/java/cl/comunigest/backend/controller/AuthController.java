@@ -3,6 +3,8 @@ package cl.comunigest.backend.controller;
 import cl.comunigest.backend.dto.LoginRequest;
 import cl.comunigest.backend.dto.LoginResponse;
 import cl.comunigest.backend.service.UsuarioService;
+import cl.comunigest.backend.security.JwtService;
+import cl.comunigest.backend.entity.Usuario;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,13 +13,16 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UsuarioService usuarioService;
+    private final JwtService jwtService;
 
-    public AuthController(UsuarioService usuarioService) {
+    public AuthController(UsuarioService usuarioService, JwtService jwtService) {
         this.usuarioService = usuarioService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        return new LoginResponse(usuarioService.autenticar(request.getEmail(), request.getPassword()));
+        Usuario usuario = usuarioService.autenticar(request.getEmail(), request.getPassword());
+        return new LoginResponse(usuario, jwtService.generateToken(usuario));
     }
 }
