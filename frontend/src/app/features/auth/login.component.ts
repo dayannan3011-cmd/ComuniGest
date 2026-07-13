@@ -74,9 +74,19 @@ export class LoginComponent {
       },
       error: (response) => {
         this.loading = false;
-        this.error = response?.error?.message === 'La cuenta se encuentra inactiva.'
-          ? 'La cuenta se encuentra inactiva.'
-          : 'No se pudo iniciar sesión. Verifica el backend y las credenciales.';
+        const backendMessage = response?.error?.message;
+        if (response?.status === 401) {
+          this.error = 'Correo o clave incorrectos.';
+        } else if (backendMessage === 'El usuario se encuentra inactivo.'
+            || backendMessage === 'La cuenta se encuentra inactiva.') {
+          this.error = 'El usuario se encuentra inactivo.';
+        } else if (response?.status === 0) {
+          this.error = 'No se pudo conectar con el servidor.';
+        } else {
+          this.error = typeof backendMessage === 'string' && backendMessage.trim()
+            ? backendMessage
+            : 'No se pudo conectar con el servidor.';
+        }
         this.changeDetector.markForCheck();
       }
     });

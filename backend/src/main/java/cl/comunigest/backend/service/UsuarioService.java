@@ -25,12 +25,13 @@ public class UsuarioService extends CrudService<Usuario> {
 
     public Usuario autenticar(String email, String password) {
         Usuario usuario = repository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new EntityNotFoundException("Usuario o clave invalidos"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "Correo o clave incorrectos."));
         if (!Boolean.TRUE.equals(usuario.getActivo())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La cuenta se encuentra inactiva.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El usuario se encuentra inactivo.");
         }
         if (!usuario.getPassword().equals(password)) {
-            throw new EntityNotFoundException("Usuario o clave invalidos");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Correo o clave incorrectos.");
         }
         return usuario;
     }
