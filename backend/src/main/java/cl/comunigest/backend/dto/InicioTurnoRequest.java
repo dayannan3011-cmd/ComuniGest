@@ -3,13 +3,13 @@ package cl.comunigest.backend.dto;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public class CierreTurnoRequest {
+public class InicioTurnoRequest {
 
     @NotNull
     private Long usuarioId;
 
     @Size(max = 500)
-    private String observacionesCierre;
+    private String observacionesInicio;
 
     public Long getUsuarioId() {
         return usuarioId;
@@ -19,11 +19,11 @@ public class CierreTurnoRequest {
         this.usuarioId = usuarioId;
     }
 
-    public String getObservacionesCierre() {
-        return observacionesCierre;
+    public String getObservacionesInicio() {
+        return observacionesInicio;
     }
 
-    public void setObservacionesCierre(String observacionesCierre) {
-        this.observacionesCierre = observacionesCierre;
+    public void setObservacionesInicio(String observacionesInicio) {
+        this.observacionesInicio = observacionesInicio;
     }
 }

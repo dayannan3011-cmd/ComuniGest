@@ -1,9 +1,10 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, ValidatorFn, Validators } from '@angular/forms';
-import { JsonPipe } from '@angular/common';
-import { switchMap } from 'rxjs';
+import { DatePipe, JsonPipe } from '@angular/common';
+import { Observable, switchMap } from 'rxjs';
 import { ApiResourceService } from '../../core/api-resource.service';
+import { AuthService } from '../../core/auth.service';
 import { ReporteResumen } from '../../core/models';
 
 type FieldType = 'text' | 'number' | 'email' | 'password' | 'textarea' | 'checkbox' | 'select';
@@ -28,7 +29,7 @@ interface SelectOption {
 @Component({
   selector: 'app-management',
   standalone: true,
-  imports: [ReactiveFormsModule, JsonPipe],
+  imports: [ReactiveFormsModule, JsonPipe, DatePipe],
   template: `
     <main class="content">
       <div class="content-header">
@@ -52,6 +53,34 @@ interface SelectOption {
         </section>
       } @else {
         <section class="editor-layout">
+          @if (resource === 'turnos') {
+            <section class="panel form-grid" [formGroup]="form">
+              <h2>Control de turno</h2>
+              <p><strong>Conserje conectado:</strong> {{ currentUserName }}</p>
+
+              @if (isConserje) {
+                @if (turnoEnCurso) {
+                  <p><strong>Turno en curso desde {{ $any(turnoEnCurso['fechaInicio']) | date:'dd/MM/yyyy HH:mm' }}</strong></p>
+                  <button type="button" [disabled]="loading" (click)="cerrarTurno()">
+                    {{ loading ? 'Cerrando...' : 'Cerrar turno' }}
+                  </button>
+                } @else {
+                  <button type="button" [disabled]="loading" (click)="iniciarTurno()">
+                    {{ loading ? 'Iniciando...' : 'Iniciar turno' }}
+                  </button>
+                }
+              } @else {
+                <p>Consulta general de turnos. El Administrador no inicia turnos desde este módulo.</p>
+              }
+
+              @if (error) {
+                <p class="form-error">{{ error }}</p>
+              }
+              @if (success) {
+                <p>{{ success }}</p>
+              }
+            </section>
+          } @else {
           <form [formGroup]="form" (ngSubmit)="save()" class="panel form-grid">
             <h2>{{ editingId ? 'Editar registro' : 'Nuevo registro' }}</h2>
 
@@ -119,13 +148,22 @@ interface SelectOption {
               <button type="button" class="secondary-button" (click)="resetForm()">Limpiar</button>
             </div>
           </form>
+          }
 
           <section class="panel table-panel">
             <h2>Registros</h2>
             <div class="table-wrap">
               <table>
                 <thead>
-                  @if (resource === 'usuarios') {
+                  @if (resource === 'turnos') {
+                    <tr>
+                      <th>Conserje</th>
+                      <th>Fecha y hora de inicio</th>
+                      <th>Fecha y hora de cierre</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  } @else if (resource === 'usuarios') {
                     <tr>
                       <th>Nombre</th>
                       <th>Correo</th>
@@ -143,7 +181,21 @@ interface SelectOption {
                 </thead>
                 <tbody>
                   @for (item of items; track item['id']) {
-                    @if (resource === 'usuarios') {
+                    @if (resource === 'turnos') {
+                      <tr>
+                        <td>{{ turnoUsuarioNombre(item) }}</td>
+                        <td>{{ $any(item['fechaInicio']) | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td>{{ item['fechaCierre'] ? ($any(item['fechaCierre']) | date:'dd/MM/yyyy HH:mm') : 'En curso' }}</td>
+                        <td>{{ item['estado'] }}</td>
+                        <td class="actions">
+                          @if (isConserje && item['estado'] === 'ABIERTO') {
+                            <button type="button" (click)="cerrarTurno()">Cerrar turno</button>
+                          } @else {
+                            <span>—</span>
+                          }
+                        </td>
+                      </tr>
+                    } @else if (resource === 'usuarios') {
                       <tr>
                         <td>{{ item['nombre'] }}</td>
                         <td>{{ item['email'] }}</td>
@@ -227,6 +279,7 @@ export class ManagementComponent implements OnInit {
   filteredDepartmentOptions: SelectOption[] = [];
   departmentSearch = '';
   departmentSuggestionsVisible = false;
+  turnoEnCurso: Record<string, unknown> | null = null;
   editingId: number | null = null;
   loading = false;
   refreshing = false;
@@ -234,6 +287,14 @@ export class ManagementComponent implements OnInit {
   success = '';
 
   readonly form: UntypedFormGroup = this.fb.group({});
+
+  get isConserje(): boolean {
+    return this.auth.currentUser()?.perfil === 'CONSERJE';
+  }
+
+  get currentUserName(): string {
+    return this.auth.currentUser()?.nombre ?? '';
+  }
 
   private readonly fieldMap: Record<string, FieldConfig[]> = {
     perfiles: [
@@ -278,10 +339,7 @@ export class ManagementComponent implements OnInit {
       { key: 'departamentoId', label: 'Departamento', type: 'select', required: true },
       { key: 'activo', label: 'Activo', type: 'checkbox' }
     ],
-    turnos: [
-      { key: 'usuarioId', label: 'ID usuario', type: 'number', required: true },
-      { key: 'observaciones', label: 'Observaciones', type: 'textarea' }
-    ],
+    turnos: [],
     visitas: [
       { key: 'nombreVisitante', label: 'Nombre visitante', type: 'text', required: true },
       { key: 'documento', label: 'Documento', type: 'text' },
@@ -309,6 +367,7 @@ export class ManagementComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly fb: UntypedFormBuilder,
     private readonly api: ApiResourceService,
+    private readonly auth: AuthService,
     private readonly changeDetector: ChangeDetectorRef
   ) {}
 
@@ -336,6 +395,10 @@ export class ManagementComponent implements OnInit {
     }
     if (this.resource === 'usuarios' && reloadRelations) {
       this.loadProfileOptions();
+    }
+    if (this.resource === 'turnos') {
+      this.loadTurnos(showRefreshFeedback);
+      return;
     }
     if (this.resource === 'reportes') {
       this.api.path<ReporteResumen>('reportes/resumen').subscribe({
@@ -468,6 +531,82 @@ export class ManagementComponent implements OnInit {
 
   patch(id: unknown, action: string, payload: unknown = {}): void {
     this.api.patch(this.resource, Number(id), action, payload).subscribe({ next: () => this.load() });
+  }
+
+  iniciarTurno(): void {
+    const user = this.auth.currentUser();
+    if (!user) {
+      this.error = 'El usuario no existe.';
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+    const payload = {
+      usuarioId: user.id
+    };
+    this.api.create<Record<string, unknown>>('turnos/iniciar', payload).pipe(
+      switchMap(() => this.turnoListRequest())
+    ).subscribe({
+      next: (items) => {
+        this.items = items;
+        this.turnoEnCurso = items.find((item) => item['estado'] === 'ABIERTO') ?? null;
+        this.loading = false;
+        this.success = 'Turno iniciado correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = this.errorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  cerrarTurno(): void {
+    const user = this.auth.currentUser();
+    if (!user || !this.turnoEnCurso) {
+      this.error = 'No existe un turno abierto para cerrar.';
+      this.changeDetector.markForCheck();
+      return;
+    }
+    if (!window.confirm('¿Seguro que deseas cerrar el turno en curso?')) {
+      return;
+    }
+
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+    const payload = {
+      usuarioId: user.id
+    };
+    this.api.patch<Record<string, unknown>>(
+      'turnos', Number(this.turnoEnCurso['id']), 'cerrar', payload
+    ).pipe(
+      switchMap(() => this.turnoListRequest())
+    ).subscribe({
+      next: (items) => {
+        this.items = items;
+        this.turnoEnCurso = null;
+        this.loading = false;
+        this.success = 'Turno cerrado correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = this.errorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  turnoUsuarioNombre(item: Record<string, unknown>): string {
+    const usuario = item['usuario'];
+    return usuario && typeof usuario === 'object' && 'nombre' in usuario
+      ? String((usuario as { nombre?: unknown }).nombre ?? '')
+      : '';
   }
 
   profileName(item: Record<string, unknown>): string {
@@ -607,6 +746,31 @@ export class ManagementComponent implements OnInit {
         this.changeDetector.markForCheck();
       }
     });
+  }
+
+  private loadTurnos(showRefreshFeedback: boolean): void {
+    this.turnoListRequest().subscribe({
+      next: (items) => {
+        this.items = items;
+        this.turnoEnCurso = this.isConserje
+          ? items.find((item) => item['estado'] === 'ABIERTO') ?? null
+          : null;
+        this.finishRefresh(showRefreshFeedback, true);
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.error = this.errorMessage(error);
+        this.finishRefresh(showRefreshFeedback, false);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private turnoListRequest(): Observable<Record<string, unknown>[]> {
+    const user = this.auth.currentUser();
+    return this.isConserje && user
+      ? this.api.path<Record<string, unknown>[]>(`turnos/usuario/${user.id}`)
+      : this.api.list<Record<string, unknown>>('turnos');
   }
 
   private loadProfileOptions(): void {
