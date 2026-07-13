@@ -4,6 +4,10 @@ import cl.comunigest.backend.dto.CierreTurnoRequest;
 import cl.comunigest.backend.dto.InicioTurnoRequest;
 import cl.comunigest.backend.entity.Turno;
 import cl.comunigest.backend.service.TurnoService;
+import cl.comunigest.backend.security.AuthenticatedUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -20,32 +24,51 @@ public class TurnoController {
     }
 
     @GetMapping
-    public List<Turno> findAll() {
-        return service.findAll();
+    public List<Turno> findAll(@AuthenticationPrincipal AuthenticatedUser user) {
+        return isAdmin(user) ? service.findAll() : service.listarPorUsuario(user.id());
     }
 
     @GetMapping("/{id}")
-    public Turno findById(@PathVariable Long id) {
-        return service.findById(id);
+    public Turno findById(@PathVariable Long id, @AuthenticationPrincipal AuthenticatedUser user) {
+        Turno turno = service.findById(id);
+        requireOwnOrAdmin(user, turno.getUsuario().getId());
+        return turno;
     }
 
     @GetMapping("/usuario/{usuarioId}")
-    public List<Turno> listarPorUsuario(@PathVariable Long usuarioId) {
+    public List<Turno> listarPorUsuario(@PathVariable Long usuarioId,
+                                        @AuthenticationPrincipal AuthenticatedUser user) {
+        requireOwnOrAdmin(user, usuarioId);
         return service.listarPorUsuario(usuarioId);
     }
 
     @GetMapping("/abierto/{usuarioId}")
-    public Turno obtenerAbierto(@PathVariable Long usuarioId) {
+    public Turno obtenerAbierto(@PathVariable Long usuarioId,
+                                @AuthenticationPrincipal AuthenticatedUser user) {
+        requireOwnOrAdmin(user, usuarioId);
         return service.obtenerAbierto(usuarioId).orElse(null);
     }
 
     @PostMapping("/iniciar")
-    public Turno iniciar(@Valid @RequestBody InicioTurnoRequest request) {
-        return service.iniciar(request.getUsuarioId(), request.getObservacionesInicio());
+    public Turno iniciar(@Valid @RequestBody InicioTurnoRequest request,
+                         @AuthenticationPrincipal AuthenticatedUser user) {
+        return service.iniciar(user.id(), request.getObservacionesInicio());
     }
 
     @PatchMapping("/{id}/cerrar")
-    public Turno cerrar(@PathVariable Long id, @Valid @RequestBody CierreTurnoRequest request) {
-        return service.cerrar(id, request.getUsuarioId(), request.getObservacionesCierre());
+    public Turno cerrar(@PathVariable Long id, @Valid @RequestBody CierreTurnoRequest request,
+                        @AuthenticationPrincipal AuthenticatedUser user) {
+        return service.cerrar(id, user.id(), request.getObservacionesCierre());
+    }
+
+    private boolean isAdmin(AuthenticatedUser user) {
+        return "ADMINISTRADOR".equalsIgnoreCase(user.perfil());
+    }
+
+    private void requireOwnOrAdmin(AuthenticatedUser user, Long usuarioId) {
+        if (!isAdmin(user) && !user.id().equals(usuarioId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "No tienes permisos para consultar turnos de otro usuario.");
+        }
     }
 }

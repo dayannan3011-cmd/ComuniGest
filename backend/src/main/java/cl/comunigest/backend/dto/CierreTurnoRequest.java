@@ -1,23 +1,11 @@
 package cl.comunigest.backend.dto;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class CierreTurnoRequest {
 
-    @NotNull
-    private Long usuarioId;
-
     @Size(max = 500)
     private String observacionesCierre;
-
-    public Long getUsuarioId() {
-        return usuarioId;
-    }
-
-    public void setUsuarioId(Long usuarioId) {
-        this.usuarioId = usuarioId;
-    }
 
     public String getObservacionesCierre() {
         return observacionesCierre;

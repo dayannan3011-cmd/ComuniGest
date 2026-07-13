@@ -7,12 +7,14 @@ import cl.comunigest.backend.repository.UsuarioRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class DataInitializer {
 
     @Bean
-    CommandLineRunner initData(PerfilRepository perfilRepository, UsuarioRepository usuarioRepository) {
+    CommandLineRunner initData(PerfilRepository perfilRepository, UsuarioRepository usuarioRepository,
+                               PasswordEncoder passwordEncoder) {
         return args -> {
             Perfil admin = perfilRepository.findByNombre("ADMINISTRADOR")
                     .orElseGet(() -> {
@@ -41,8 +43,18 @@ public class DataInitializer {
                 Usuario usuario = new Usuario();
                 usuario.setNombre("Administrador ComuniGest");
                 usuario.setEmail("admin@comunigest.local");
-                usuario.setPassword("admin123");
+                usuario.setPassword(passwordEncoder.encode("admin123"));
                 usuario.setPerfil(admin);
+                return usuarioRepository.save(usuario);
+            });
+
+            usuarioRepository.findByEmailIgnoreCase("conserje@comunigest.local").orElseGet(() -> {
+                Usuario usuario = new Usuario();
+                usuario.setNombre("Conserje Demostración");
+                usuario.setEmail("conserje@comunigest.local");
+                usuario.setPassword(passwordEncoder.encode("conserje123"));
+                usuario.setPerfil(conserje);
+                usuario.setActivo(true);
                 return usuarioRepository.save(usuario);
             });
         };

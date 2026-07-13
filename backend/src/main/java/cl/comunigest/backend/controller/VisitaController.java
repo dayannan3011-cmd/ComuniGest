@@ -4,6 +4,8 @@ import cl.comunigest.backend.dto.IngresoVisitaRequest;
 import cl.comunigest.backend.dto.SalidaVisitaRequest;
 import cl.comunigest.backend.entity.Visita;
 import cl.comunigest.backend.service.VisitaService;
+import cl.comunigest.backend.security.AuthenticatedUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,8 +22,8 @@ public class VisitaController {
     }
 
     @GetMapping
-    public List<Visita> findAll() {
-        return service.findAll();
+    public List<Visita> findAll(@AuthenticationPrincipal AuthenticatedUser user) {
+        return "ADMINISTRADOR".equalsIgnoreCase(user.perfil()) ? service.findAll() : service.findActivas();
     }
 
     @GetMapping("/activas")
@@ -35,13 +37,15 @@ public class VisitaController {
     }
 
     @PostMapping("/ingreso")
-    public Visita registrarIngreso(@Valid @RequestBody IngresoVisitaRequest request) {
-        return service.registrarIngreso(request.getUsuarioId(), request.getDepartamentoId(),
+    public Visita registrarIngreso(@Valid @RequestBody IngresoVisitaRequest request,
+                                   @AuthenticationPrincipal AuthenticatedUser user) {
+        return service.registrarIngreso(user.id(), request.getDepartamentoId(),
                 request.getNombreVisitante(), request.getDocumento(), request.getPatente());
     }
 
     @PatchMapping("/{id}/salida")
-    public Visita registrarSalida(@PathVariable Long id, @Valid @RequestBody SalidaVisitaRequest request) {
-        return service.registrarSalida(id, request.getUsuarioId());
+    public Visita registrarSalida(@PathVariable Long id, @Valid @RequestBody SalidaVisitaRequest request,
+                                  @AuthenticationPrincipal AuthenticatedUser user) {
+        return service.registrarSalida(id, user.id());
     }
 }

@@ -12,7 +12,7 @@ import { AuthService } from '../../core/auth.service';
       <section class="login-panel">
         <div>
           <p class="eyebrow">ComuniGest</p>
-          <h1>Acceso de conserjeria</h1>
+          <h1>Acceso a ComuniGest</h1>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="form-grid">
@@ -35,7 +35,6 @@ import { AuthService } from '../../core/auth.service';
           </button>
         </form>
 
-        <p class="hint">Usuario inicial: admin&#64;comunigest.local / admin123</p>
       </section>
     </main>
   `
@@ -45,8 +44,8 @@ export class LoginComponent {
   error = '';
 
   readonly form = this.fb.group({
-    email: ['admin@comunigest.local', [Validators.required, Validators.email]],
-    password: ['admin123', Validators.required]
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required]
   });
 
   constructor(
