@@ -217,3 +217,15 @@ ON DUPLICATE KEY UPDATE
   nombre = 'Administrador ComuniGest',
   perfil_id = (SELECT id FROM perfiles WHERE nombre = 'ADMINISTRADOR'),
   activo = 1;
+
+INSERT INTO usuarios (nombre, email, password, perfil_id, activo)
+SELECT
+  'Conserje Demostración',
+  'conserje@comunigest.local',
+  '$2a$10$5Uy8iR3L5Zh7uRlbAf6oqemUvlqROii8giuCVodsNXqJOqpH/Giwi',
+  p.id,
+  1
+FROM perfiles p
+WHERE p.nombre = 'CONSERJE'
+ON DUPLICATE KEY UPDATE
+  id = id;

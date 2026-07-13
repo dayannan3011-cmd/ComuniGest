@@ -47,6 +47,16 @@ public class DataInitializer {
                 usuario.setPerfil(admin);
                 return usuarioRepository.save(usuario);
             });
+
+            usuarioRepository.findByEmailIgnoreCase("conserje@comunigest.local").orElseGet(() -> {
+                Usuario usuario = new Usuario();
+                usuario.setNombre("Conserje Demostración");
+                usuario.setEmail("conserje@comunigest.local");
+                usuario.setPassword(passwordEncoder.encode("conserje123"));
+                usuario.setPerfil(conserje);
+                usuario.setActivo(true);
+                return usuarioRepository.save(usuario);
+            });
         };
     }
 }

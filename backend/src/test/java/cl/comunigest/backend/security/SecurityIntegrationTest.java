@@ -1,8 +1,6 @@
 package cl.comunigest.backend.security;
 
-import cl.comunigest.backend.entity.Perfil;
 import cl.comunigest.backend.entity.Usuario;
-import cl.comunigest.backend.repository.PerfilRepository;
 import cl.comunigest.backend.repository.IncidenciaRepository;
 import cl.comunigest.backend.repository.TurnoRepository;
 import cl.comunigest.backend.repository.UsuarioRepository;
@@ -15,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -39,16 +36,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class SecurityIntegrationTest {
 
-    private static final String CONSERJE_EMAIL = "conserje.jwt@comunigest.local";
+    private static final String CONSERJE_EMAIL = "conserje@comunigest.local";
     private static final String CONSERJE_PASSWORD = "conserje123";
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
     @Autowired UsuarioRepository usuarioRepository;
-    @Autowired PerfilRepository perfilRepository;
     @Autowired TurnoRepository turnoRepository;
     @Autowired IncidenciaRepository incidenciaRepository;
-    @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtService jwtService;
 
     private Usuario administrador;
@@ -59,16 +54,7 @@ class SecurityIntegrationTest {
         incidenciaRepository.deleteAll();
         turnoRepository.deleteAll();
         administrador = usuarioRepository.findByEmailIgnoreCase("admin@comunigest.local").orElseThrow();
-        Perfil perfilConserje = perfilRepository.findByNombre("CONSERJE").orElseThrow();
-        conserje = usuarioRepository.findByEmailIgnoreCase(CONSERJE_EMAIL).orElseGet(() -> {
-            Usuario usuario = new Usuario();
-            usuario.setNombre("Conserje JWT");
-            usuario.setEmail(CONSERJE_EMAIL);
-            usuario.setPassword(passwordEncoder.encode(CONSERJE_PASSWORD));
-            usuario.setPerfil(perfilConserje);
-            usuario.setActivo(true);
-            return usuarioRepository.save(usuario);
-        });
+        conserje = usuarioRepository.findByEmailIgnoreCase(CONSERJE_EMAIL).orElseThrow();
         if (!Boolean.TRUE.equals(conserje.getActivo())) {
             conserje.setActivo(true);
             conserje = usuarioRepository.save(conserje);
@@ -94,6 +80,12 @@ class SecurityIntegrationTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"admin@comunigest.local\",\"password\":\"incorrecta\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Correo o clave incorrectos."));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"conserje@comunigest.local\",\"password\":\"incorrecta\"}"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Correo o clave incorrectos."));
 
