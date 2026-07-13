@@ -80,6 +80,63 @@ interface SelectOption {
                 <p>{{ success }}</p>
               }
             </section>
+          } @else if (resource === 'visitas') {
+            <form [formGroup]="form" (ngSubmit)="registrarVisita()" class="panel form-grid">
+              <h2>{{ isConserje ? 'Registrar ingreso de visita' : 'Consulta de visitas' }}</h2>
+              @if (isConserje) {
+                <label>
+                  Nombre completo del visitante
+                  <input type="text" formControlName="nombreVisitante" maxlength="160">
+                </label>
+                <label>
+                  Documento o RUT
+                  <input type="text" formControlName="documento" maxlength="40">
+                </label>
+                <label>
+                  Patente
+                  <input type="text" formControlName="patente" maxlength="20">
+                </label>
+                <label>
+                  Departamento
+                  <div role="combobox" aria-haspopup="listbox" [attr.aria-expanded]="departmentSuggestionsVisible">
+                    <input
+                      type="search"
+                      placeholder="Buscar por torre o número"
+                      autocomplete="off"
+                      [value]="departmentSearch"
+                      (focus)="showDepartmentSuggestions()"
+                      (input)="onDepartmentSearch($any($event.target).value)">
+                    @if (departmentSuggestionsVisible) {
+                      <div role="listbox">
+                        @for (option of filteredDepartmentOptions; track option.value) {
+                          <button
+                            type="button"
+                            role="option"
+                            (mousedown)="$event.preventDefault()"
+                            (click)="selectDepartment(option)">
+                            {{ option.label }}
+                          </button>
+                        } @empty {
+                          <p>No se encontraron departamentos</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </label>
+                <button type="submit" [disabled]="form.invalid || loading">
+                  {{ loading ? 'Registrando...' : 'Registrar visita' }}
+                </button>
+              } @else {
+                <p>Consulta general de visitas. El Administrador no registra ingresos ni salidas.</p>
+              }
+
+              @if (error) {
+                <p class="form-error">{{ error }}</p>
+              }
+              @if (success) {
+                <p>{{ success }}</p>
+              }
+            </form>
           } @else {
           <form [formGroup]="form" (ngSubmit)="save()" class="panel form-grid">
             <h2>{{ editingId ? 'Editar registro' : 'Nuevo registro' }}</h2>
@@ -163,6 +220,17 @@ interface SelectOption {
                       <th>Estado</th>
                       <th>Acciones</th>
                     </tr>
+                  } @else if (resource === 'visitas') {
+                    <tr>
+                      <th>Visitante</th>
+                      <th>Documento/RUT</th>
+                      <th>Patente</th>
+                      <th>Departamento</th>
+                      <th>Fecha y hora de ingreso</th>
+                      <th>Fecha y hora de salida</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
                   } @else if (resource === 'usuarios') {
                     <tr>
                       <th>Nombre</th>
@@ -190,6 +258,23 @@ interface SelectOption {
                         <td class="actions">
                           @if (isConserje && item['estado'] === 'ABIERTO') {
                             <button type="button" (click)="cerrarTurno()">Cerrar turno</button>
+                          } @else {
+                            <span>—</span>
+                          }
+                        </td>
+                      </tr>
+                    } @else if (resource === 'visitas') {
+                      <tr>
+                        <td>{{ item['nombreVisitante'] }}</td>
+                        <td>{{ item['documento'] }}</td>
+                        <td>{{ item['patente'] || '—' }}</td>
+                        <td>{{ visitaDepartamento(item) }}</td>
+                        <td>{{ $any(item['fechaIngreso']) | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td>{{ item['fechaSalida'] ? ($any(item['fechaSalida']) | date:'dd/MM/yyyy HH:mm') : 'En curso' }}</td>
+                        <td>{{ item['estado'] }}</td>
+                        <td class="actions">
+                          @if (isConserje && item['estado'] === 'INGRESADA') {
+                            <button type="button" (click)="registrarSalidaVisita(item)">Registrar salida</button>
                           } @else {
                             <span>—</span>
                           }
@@ -341,12 +426,10 @@ export class ManagementComponent implements OnInit {
     ],
     turnos: [],
     visitas: [
-      { key: 'nombreVisitante', label: 'Nombre visitante', type: 'text', required: true },
-      { key: 'documento', label: 'Documento', type: 'text' },
-      { key: 'patente', label: 'Patente', type: 'text' },
-      { key: 'motivo', label: 'Motivo', type: 'textarea' },
-      { key: 'departamentoId', label: 'ID departamento', type: 'number', required: true },
-      { key: 'residenteAutorizadorId', label: 'ID residente autorizador', type: 'number' }
+      { key: 'nombreVisitante', label: 'Nombre completo del visitante', type: 'text', required: true, maxLength: 160 },
+      { key: 'documento', label: 'Documento o RUT', type: 'text', required: true, maxLength: 40 },
+      { key: 'patente', label: 'Patente', type: 'text', maxLength: 20 },
+      { key: 'departamentoId', label: 'Departamento', type: 'select', required: true }
     ],
     encomiendas: [
       { key: 'descripcion', label: 'Descripcion', type: 'textarea', required: true },
@@ -390,7 +473,7 @@ export class ManagementComponent implements OnInit {
 
   load(showRefreshFeedback = false, reloadRelations = true): void {
     this.error = '';
-    if (this.resource === 'residentes' && reloadRelations) {
+    if ((this.resource === 'residentes' || this.resource === 'visitas') && reloadRelations) {
       this.loadDepartmentOptions();
     }
     if (this.resource === 'usuarios' && reloadRelations) {
@@ -398,6 +481,10 @@ export class ManagementComponent implements OnInit {
     }
     if (this.resource === 'turnos') {
       this.loadTurnos(showRefreshFeedback);
+      return;
+    }
+    if (this.resource === 'visitas') {
+      this.loadVisitas(showRefreshFeedback);
       return;
     }
     if (this.resource === 'reportes') {
@@ -609,6 +696,89 @@ export class ManagementComponent implements OnInit {
       : '';
   }
 
+  registrarVisita(): void {
+    const user = this.auth.currentUser();
+    if (!user) {
+      this.error = 'El usuario no existe.';
+      this.changeDetector.markForCheck();
+      return;
+    }
+    if (this.form.invalid) {
+      return;
+    }
+
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+    const raw = this.form.getRawValue();
+    const payload = {
+      usuarioId: user.id,
+      departamentoId: Number(raw['departamentoId']),
+      nombreVisitante: raw['nombreVisitante'],
+      documento: raw['documento'],
+      patente: raw['patente'] || null
+    };
+    this.api.create<Record<string, unknown>>('visitas/ingreso', payload).pipe(
+      switchMap(() => this.visitaListRequest())
+    ).subscribe({
+      next: (items) => {
+        this.items = items;
+        this.loading = false;
+        this.resetForm();
+        this.success = 'Visita registrada correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = this.errorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  registrarSalidaVisita(item: Record<string, unknown>): void {
+    const user = this.auth.currentUser();
+    if (!user) {
+      this.error = 'El usuario no existe.';
+      this.changeDetector.markForCheck();
+      return;
+    }
+    const visitor = String(item['nombreVisitante'] ?? '');
+    if (!window.confirm(`¿Seguro que deseas registrar la salida de ${visitor}?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+    this.api.patch<Record<string, unknown>>(
+      'visitas', Number(item['id']), 'salida', { usuarioId: user.id }
+    ).pipe(
+      switchMap(() => this.visitaListRequest())
+    ).subscribe({
+      next: (items) => {
+        this.items = items;
+        this.loading = false;
+        this.success = 'Salida registrada correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = this.errorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  visitaDepartamento(item: Record<string, unknown>): string {
+    const departamento = item['departamento'];
+    if (!departamento || typeof departamento !== 'object') {
+      return '';
+    }
+    const value = departamento as { torre?: unknown; numero?: unknown };
+    return `${String(value.torre ?? '')} - ${String(value.numero ?? '')}`;
+  }
+
   profileName(item: Record<string, unknown>): string {
     const perfil = item['perfil'];
     return perfil && typeof perfil === 'object' && 'nombre' in perfil
@@ -764,6 +934,27 @@ export class ManagementComponent implements OnInit {
         this.changeDetector.markForCheck();
       }
     });
+  }
+
+  private loadVisitas(showRefreshFeedback: boolean): void {
+    this.visitaListRequest().subscribe({
+      next: (items) => {
+        this.items = items;
+        this.finishRefresh(showRefreshFeedback, true);
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.error = this.errorMessage(error);
+        this.finishRefresh(showRefreshFeedback, false);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private visitaListRequest(): Observable<Record<string, unknown>[]> {
+    return this.isConserje
+      ? this.api.path<Record<string, unknown>[]>('visitas/activas')
+      : this.api.list<Record<string, unknown>>('visitas');
   }
 
   private turnoListRequest(): Observable<Record<string, unknown>[]> {

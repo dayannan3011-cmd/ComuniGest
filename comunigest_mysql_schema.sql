@@ -84,18 +84,25 @@ CREATE TABLE IF NOT EXISTS turnos (
 
 CREATE TABLE IF NOT EXISTS visitas (
   id BIGINT NOT NULL AUTO_INCREMENT,
-  nombre_visitante VARCHAR(140) NOT NULL,
-  documento VARCHAR(40) NULL,
+  nombre_visitante VARCHAR(160) NOT NULL,
+  documento_identidad VARCHAR(40) NOT NULL,
   patente VARCHAR(20) NULL,
   motivo VARCHAR(255) NULL,
   departamento_id BIGINT NOT NULL,
   residente_autorizador_id BIGINT NULL,
+  turno_ingreso_id BIGINT NULL,
+  turno_salida_id BIGINT NULL,
   fecha_ingreso DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   fecha_salida DATETIME(6) NULL,
   estado VARCHAR(20) NOT NULL DEFAULT 'INGRESADA',
+  observaciones VARCHAR(500) NULL,
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_visitas_departamento_id (departamento_id),
   KEY idx_visitas_residente_autorizador_id (residente_autorizador_id),
+  KEY idx_visitas_turno_ingreso_id (turno_ingreso_id),
+  KEY idx_visitas_turno_salida_id (turno_salida_id),
   KEY idx_visitas_estado (estado),
   CONSTRAINT chk_visitas_estado CHECK (estado IN ('INGRESADA', 'SALIDA')),
   CONSTRAINT fk_visitas_departamentos
@@ -105,7 +112,15 @@ CREATE TABLE IF NOT EXISTS visitas (
   CONSTRAINT fk_visitas_residentes
     FOREIGN KEY (residente_autorizador_id) REFERENCES residentes (id)
     ON UPDATE CASCADE
-    ON DELETE SET NULL
+    ON DELETE SET NULL,
+  CONSTRAINT fk_visitas_turno_ingreso
+    FOREIGN KEY (turno_ingreso_id) REFERENCES turnos (id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_visitas_turno_salida
+    FOREIGN KEY (turno_salida_id) REFERENCES turnos (id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS encomiendas (

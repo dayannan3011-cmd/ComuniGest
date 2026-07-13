@@ -3,6 +3,7 @@ package cl.comunigest.backend.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
@@ -19,12 +20,16 @@ public class Visita {
     private Long id;
 
     @NotBlank
-    @Column(nullable = false, length = 140)
+    @Size(max = 160)
+    @Column(nullable = false, length = 160)
     private String nombreVisitante;
 
-    @Column(length = 40)
+    @NotBlank
+    @Size(max = 40)
+    @Column(name = "documento_identidad", nullable = false, length = 40)
     private String documento;
 
+    @Size(max = 20)
     @Column(length = 20)
     private String patente;
 
@@ -40,14 +45,44 @@ public class Visita {
     @JoinColumn(name = "residente_autorizador_id")
     private Residente residenteAutorizador;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "turno_ingreso_id")
+    private Turno turnoIngreso;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "turno_salida_id")
+    private Turno turnoSalida;
+
     @Column(nullable = false)
     private LocalDateTime fechaIngreso = LocalDateTime.now();
 
     private LocalDateTime fechaSalida;
 
+    @Size(max = 500)
+    @Column(length = 500)
+    private String observaciones;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private EstadoVisita estado = EstadoVisita.INGRESADA;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime creadoEn;
+
+    @Column(nullable = false)
+    private LocalDateTime actualizadoEn;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        creadoEn = now;
+        actualizadoEn = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        actualizadoEn = LocalDateTime.now();
+    }
 
     public Long getId() {
         return id;
@@ -105,6 +140,22 @@ public class Visita {
         this.residenteAutorizador = residenteAutorizador;
     }
 
+    public Turno getTurnoIngreso() {
+        return turnoIngreso;
+    }
+
+    public void setTurnoIngreso(Turno turnoIngreso) {
+        this.turnoIngreso = turnoIngreso;
+    }
+
+    public Turno getTurnoSalida() {
+        return turnoSalida;
+    }
+
+    public void setTurnoSalida(Turno turnoSalida) {
+        this.turnoSalida = turnoSalida;
+    }
+
     public LocalDateTime getFechaIngreso() {
         return fechaIngreso;
     }
@@ -121,11 +172,27 @@ public class Visita {
         this.fechaSalida = fechaSalida;
     }
 
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
     public EstadoVisita getEstado() {
         return estado;
     }
 
     public void setEstado(EstadoVisita estado) {
         this.estado = estado;
+    }
+
+    public LocalDateTime getCreadoEn() {
+        return creadoEn;
+    }
+
+    public LocalDateTime getActualizadoEn() {
+        return actualizadoEn;
     }
 }
