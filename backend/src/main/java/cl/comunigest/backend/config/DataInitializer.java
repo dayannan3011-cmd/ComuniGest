@@ -23,22 +23,12 @@ public class DataInitializer {
                         perfil.setDescripcion("Administración general del sistema");
                         return perfilRepository.save(perfil);
                     });
-            if (!"Administración general del sistema".equals(admin.getDescripcion())) {
-                admin.setDescripcion("Administración general del sistema");
-                perfilRepository.save(admin);
-            }
-
             Perfil conserje = perfilRepository.findByNombre("CONSERJE").orElseGet(() -> {
                 Perfil perfil = new Perfil();
                 perfil.setNombre("CONSERJE");
                 perfil.setDescripcion("Operación diaria de conserjería");
                 return perfilRepository.save(perfil);
             });
-            if (!"Operación diaria de conserjería".equals(conserje.getDescripcion())) {
-                conserje.setDescripcion("Operación diaria de conserjería");
-                perfilRepository.save(conserje);
-            }
-
             usuarioRepository.findByEmailIgnoreCase("admin@comunigest.local").orElseGet(() -> {
                 Usuario usuario = new Usuario();
                 usuario.setNombre("Administrador ComuniGest");

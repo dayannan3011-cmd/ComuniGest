@@ -62,7 +62,7 @@ public class SecurityConfig {
     }
 
     @Configuration
-    @Profile("local")
+    @Profile("h2")
     @ConditionalOnProperty(name = "spring.h2.console.enabled", havingValue = "true")
     static class LocalH2ConsoleSecurity {
         @Bean

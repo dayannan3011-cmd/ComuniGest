@@ -1,3 +1,5 @@
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE DATABASE IF NOT EXISTS comunigest_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -8,7 +10,7 @@ CREATE TABLE IF NOT EXISTS perfiles (
   id BIGINT NOT NULL AUTO_INCREMENT,
   nombre VARCHAR(80) NOT NULL,
   descripcion VARCHAR(255) NULL,
-  activo TINYINT(1) NOT NULL DEFAULT 1,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
   UNIQUE KEY uk_perfiles_nombre (nombre)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -28,11 +30,11 @@ CREATE TABLE IF NOT EXISTS departamentos (
 
 CREATE TABLE IF NOT EXISTS usuarios (
   id BIGINT NOT NULL AUTO_INCREMENT,
-  nombre VARCHAR(120) NOT NULL,
+  nombre VARCHAR(160) NOT NULL,
   email VARCHAR(160) NOT NULL,
   password VARCHAR(255) NOT NULL,
   perfil_id BIGINT NOT NULL,
-  activo TINYINT(1) NOT NULL DEFAULT 1,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
   UNIQUE KEY uk_usuarios_email (email),
   KEY idx_usuarios_perfil_id (perfil_id),
@@ -51,7 +53,7 @@ CREATE TABLE IF NOT EXISTS residentes (
   email VARCHAR(160) NULL,
   tipo_residente VARCHAR(20) NOT NULL DEFAULT 'PROPIETARIO',
   departamento_id BIGINT NOT NULL,
-  activo TINYINT(1) NOT NULL DEFAULT 1,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
   creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -130,7 +132,7 @@ CREATE TABLE IF NOT EXISTS encomiendas (
   empresa_repartidor VARCHAR(160) NULL,
   codigo_recepcion VARCHAR(80) NULL,
   recibido_por VARCHAR(140) NULL,
-  entregado_a VARCHAR(140) NULL,
+  entregadoa VARCHAR(140) NULL,
   departamento_id BIGINT NOT NULL,
   turno_recepcion_id BIGINT NULL,
   turno_entrega_id BIGINT NULL,
@@ -228,4 +230,6 @@ SELECT
 FROM perfiles p
 WHERE p.nombre = 'CONSERJE'
 ON DUPLICATE KEY UPDATE
-  id = id;
+  nombre = 'Conserje Demostración',
+  perfil_id = (SELECT id FROM perfiles WHERE nombre = 'CONSERJE'),
+  activo = 1;

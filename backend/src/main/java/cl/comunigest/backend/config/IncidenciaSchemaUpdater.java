@@ -4,6 +4,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 
 @Component
+@Profile("h2")
 @Order(Ordered.HIGHEST_PRECEDENCE + 3)
 public class IncidenciaSchemaUpdater implements ApplicationRunner {
     private final DataSource dataSource;

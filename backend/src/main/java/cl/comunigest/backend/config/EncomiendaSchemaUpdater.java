@@ -4,6 +4,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @Component
+@Profile("h2")
 @Order(Ordered.HIGHEST_PRECEDENCE + 2)
 public class EncomiendaSchemaUpdater implements ApplicationRunner {
     private final DataSource dataSource;
