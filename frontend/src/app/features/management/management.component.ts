@@ -53,15 +53,16 @@ interface SelectOption {
         </section>
       } @else {
         <section class="editor-layout"
+          [class.turnos-consulta]="resource === 'turnos' && !isConserje"
+          [class.visitas-consulta]="resource === 'visitas' && !isConserje"
           [class.encomiendas-consulta]="resource === 'encomiendas' && !isConserje"
           [class.incidencias-gestion]="resource === 'incidencias' && !isConserje"
           [class.perfiles-catalogo]="resource === 'perfiles'">
           @if (resource === 'turnos') {
-            <section class="panel form-grid" [formGroup]="form">
-              <h2>Control de turno</h2>
-              <p><strong>Conserje conectado:</strong> {{ currentUserName }}</p>
-
-              @if (isConserje) {
+            @if (isConserje) {
+              <section class="panel form-grid" [formGroup]="form">
+                <h2>Control de turno</h2>
+                <p><strong>Conserje conectado:</strong> {{ currentUserName }}</p>
                 @if (turnoEnCurso) {
                   <p><strong>Turno en curso desde {{ $any(turnoEnCurso['fechaInicio']) | date:'dd/MM/yyyy HH:mm' }}</strong></p>
                   <button type="button" [disabled]="loading" (click)="cerrarTurno()">
@@ -72,21 +73,19 @@ interface SelectOption {
                     {{ loading ? 'Iniciando...' : 'Iniciar turno' }}
                   </button>
                 }
-              } @else {
-                <p>Consulta general de turnos. El Administrador no inicia turnos desde este módulo.</p>
-              }
 
-              @if (error) {
-                <p class="form-error">{{ error }}</p>
-              }
-              @if (success) {
-                <p>{{ success }}</p>
-              }
-            </section>
+                @if (error) {
+                  <p class="form-error">{{ error }}</p>
+                }
+                @if (success) {
+                  <p>{{ success }}</p>
+                }
+              </section>
+            }
           } @else if (resource === 'visitas') {
-            <form [formGroup]="form" (ngSubmit)="registrarVisita()" class="panel form-grid">
-              <h2>{{ isConserje ? 'Registrar ingreso de visita' : 'Consulta de visitas' }}</h2>
-              @if (isConserje) {
+            @if (isConserje) {
+              <form [formGroup]="form" (ngSubmit)="registrarVisita()" class="panel form-grid">
+                <h2>Registrar ingreso de visita</h2>
                 <label>
                   Nombre completo del visitante
                   <input type="text" formControlName="nombreVisitante" maxlength="160">
@@ -129,17 +128,15 @@ interface SelectOption {
                 <button type="submit" [disabled]="form.invalid || loading">
                   {{ loading ? 'Registrando...' : 'Registrar visita' }}
                 </button>
-              } @else {
-                <p>Consulta general de visitas. El Administrador no registra ingresos ni salidas.</p>
-              }
 
-              @if (error) {
-                <p class="form-error">{{ error }}</p>
-              }
-              @if (success) {
-                <p>{{ success }}</p>
-              }
-            </form>
+                @if (error) {
+                  <p class="form-error">{{ error }}</p>
+                }
+                @if (success) {
+                  <p>{{ success }}</p>
+                }
+              </form>
+            }
           } @else if (resource === 'encomiendas') {
             @if (isConserje) {
             <form [formGroup]="form" (ngSubmit)="registrarEncomienda()" class="panel form-grid">
@@ -287,7 +284,98 @@ interface SelectOption {
 
           <section class="panel table-panel">
             @if (resource !== 'incidencias') { <h2>Registros</h2> }
-            @if (resource === 'encomiendas') {
+            @if (resource === 'usuarios') {
+              <div class="consulta-filtros">
+                <label>Buscar por nombre o correo
+                  <input type="search" [value]="usuarioBusqueda"
+                    (input)="usuarioBusqueda = $any($event.target).value">
+                </label>
+                <label>Perfil
+                  <select [value]="usuarioPerfil" (change)="usuarioPerfil = $any($event.target).value">
+                    <option value="TODOS">Todos</option>
+                    <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+                    <option value="CONSERJE">CONSERJE</option>
+                  </select>
+                </label>
+                <label>Estado
+                  <select [value]="usuarioEstado" (change)="usuarioEstado = $any($event.target).value">
+                    <option value="TODOS">Todos</option>
+                    <option value="ACTIVO">Activos</option>
+                    <option value="INACTIVO">Inactivos</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (resource === 'departamentos') {
+              <div class="consulta-filtros">
+                <label>Buscar por torre o número
+                  <input type="search" [value]="departamentoBusqueda"
+                    (input)="departamentoBusqueda = $any($event.target).value">
+                </label>
+                <label>Estado
+                  <select [value]="departamentoEstado"
+                    (change)="departamentoEstado = $any($event.target).value">
+                    <option value="TODOS">Todos</option>
+                    <option value="HABITADO">HABITADO</option>
+                    <option value="DESOCUPADO">DESOCUPADO</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (resource === 'residentes') {
+              <div class="consulta-filtros">
+                <label>Buscar por nombres, apellidos o RUT
+                  <input type="search" [value]="residenteBusqueda"
+                    (input)="residenteBusqueda = $any($event.target).value">
+                </label>
+                <label>Tipo de residente
+                  <select [value]="residenteTipo" (change)="residenteTipo = $any($event.target).value">
+                    <option value="TODOS">Todos</option>
+                    <option value="PROPIETARIO">PROPIETARIO</option>
+                    <option value="ARRENDATARIO">ARRENDATARIO</option>
+                    <option value="FAMILIAR">FAMILIAR</option>
+                    <option value="OTRO">OTRO</option>
+                  </select>
+                </label>
+                <label>Estado
+                  <select [value]="residenteEstado" (change)="residenteEstado = $any($event.target).value">
+                    <option value="TODOS">Todos</option>
+                    <option value="ACTIVO">Activos</option>
+                    <option value="INACTIVO">Inactivos</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (resource === 'turnos') {
+              <div class="consulta-filtros">
+                <label>Buscar por conserje
+                  <input type="search" [value]="turnoBusqueda"
+                    (input)="turnoBusqueda = $any($event.target).value">
+                </label>
+                <label>Estado
+                  <select [value]="turnoEstado" (change)="turnoEstado = $any($event.target).value">
+                    <option value="TODOS">Todos</option>
+                    <option value="ABIERTO">Abiertos</option>
+                    <option value="CERRADO">Cerrados</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (resource === 'visitas') {
+              <div class="consulta-filtros">
+                <label>Buscar visitante, documento/RUT o patente
+                  <input type="search" [value]="visitaBusqueda"
+                    (input)="visitaBusqueda = $any($event.target).value">
+                </label>
+                <label>Estado
+                  <select [value]="visitaEstado" (change)="visitaEstado = $any($event.target).value">
+                    <option value="TODAS">Todas</option>
+                    <option value="INGRESADA">Ingresadas</option>
+                    <option value="SALIDA">Salidas</option>
+                  </select>
+                </label>
+                <label>Buscar departamento
+                  <input type="search" [value]="visitaDepartamentoBusqueda"
+                    (input)="visitaDepartamentoBusqueda = $any($event.target).value">
+                </label>
+              </div>
+            } @else if (resource === 'encomiendas') {
               <label>
                 Estado
                 <select [value]="encomiendaEstado" (change)="onEncomiendaEstadoChange($any($event.target).value)">
@@ -368,6 +456,27 @@ interface SelectOption {
                       <th>Nombre</th>
                       <th>Correo</th>
                       <th>Perfil</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  } @else if (resource === 'departamentos') {
+                    <tr>
+                      <th>Torre</th>
+                      <th>Número</th>
+                      <th>Piso</th>
+                      <th>Estado</th>
+                      <th>Observaciones</th>
+                      <th>Acciones</th>
+                    </tr>
+                  } @else if (resource === 'residentes') {
+                    <tr>
+                      <th>Nombres</th>
+                      <th>Apellidos</th>
+                      <th>RUT</th>
+                      <th>Teléfono</th>
+                      <th>Email</th>
+                      <th>Tipo de residente</th>
+                      <th>Departamento</th>
                       <th>Estado</th>
                       <th>Acciones</th>
                     </tr>
@@ -469,6 +578,33 @@ interface SelectOption {
                           </button>
                         </td>
                       </tr>
+                    } @else if (resource === 'departamentos') {
+                      <tr>
+                        <td>{{ item['torre'] }}</td>
+                        <td>{{ item['numero'] }}</td>
+                        <td>{{ item['piso'] }}</td>
+                        <td>{{ item['estado'] }}</td>
+                        <td>{{ item['observaciones'] || '—' }}</td>
+                        <td class="actions">
+                          <button type="button" class="secondary-button" (click)="edit(item)">Editar</button>
+                          <button type="button" class="danger-button" (click)="remove(item)">Eliminar</button>
+                        </td>
+                      </tr>
+                    } @else if (resource === 'residentes') {
+                      <tr>
+                        <td>{{ item['nombres'] }}</td>
+                        <td>{{ item['apellidos'] }}</td>
+                        <td>{{ item['rut'] }}</td>
+                        <td>{{ item['telefono'] }}</td>
+                        <td>{{ item['email'] }}</td>
+                        <td>{{ item['tipoResidente'] }}</td>
+                        <td>{{ visitaDepartamento(item) }}</td>
+                        <td>{{ item['activo'] ? 'Activo' : 'Inactivo' }}</td>
+                        <td class="actions">
+                          <button type="button" class="secondary-button" (click)="edit(item)">Editar</button>
+                          <button type="button" class="danger-button" (click)="remove(item)">Eliminar</button>
+                        </td>
+                      </tr>
                     } @else {
                       <tr>
                         <td>{{ item['id'] }}</td>
@@ -501,6 +637,8 @@ interface SelectOption {
     </main>
   `,
   styles: [`
+    .editor-layout.turnos-consulta,
+    .editor-layout.visitas-consulta,
     .editor-layout.encomiendas-consulta,
     .editor-layout.incidencias-gestion,
     .editor-layout.perfiles-catalogo {
@@ -511,6 +649,13 @@ interface SelectOption {
       display: grid;
       gap: 1rem;
       grid-template-columns: repeat(3, minmax(180px, 1fr));
+      margin-bottom: 1rem;
+    }
+
+    .consulta-filtros {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       margin-bottom: 1rem;
     }
 
@@ -575,6 +720,19 @@ export class ManagementComponent implements OnInit {
   incidenciaEstado = 'TODAS';
   incidenciaCategoria = 'TODAS';
   incidenciaCriticidad = 'TODAS';
+  usuarioBusqueda = '';
+  usuarioPerfil = 'TODOS';
+  usuarioEstado = 'TODOS';
+  departamentoBusqueda = '';
+  departamentoEstado = 'TODOS';
+  residenteBusqueda = '';
+  residenteTipo = 'TODOS';
+  residenteEstado = 'TODOS';
+  turnoBusqueda = '';
+  turnoEstado = 'TODOS';
+  visitaBusqueda = '';
+  visitaEstado = 'TODAS';
+  visitaDepartamentoBusqueda = '';
   private readonly resolucionesPendientes: Record<number, string> = {};
 
   readonly form: UntypedFormGroup = this.fb.group({});
@@ -588,6 +746,46 @@ export class ManagementComponent implements OnInit {
   }
 
   get visibleItems(): Record<string, unknown>[] {
+    if (this.resource === 'usuarios') {
+      const search = this.normalizeFilter(this.usuarioBusqueda);
+      return this.items.filter((item) =>
+        (!search || this.includesFilter(item['nombre'], search) || this.includesFilter(item['email'], search))
+        && (this.usuarioPerfil === 'TODOS' || this.profileName(item) === this.usuarioPerfil)
+        && (this.usuarioEstado === 'TODOS'
+          || (this.usuarioEstado === 'ACTIVO' && item['activo'] === true)
+          || (this.usuarioEstado === 'INACTIVO' && item['activo'] === false)));
+    }
+    if (this.resource === 'departamentos') {
+      const search = this.normalizeFilter(this.departamentoBusqueda);
+      return this.items.filter((item) =>
+        (!search || this.includesFilter(item['torre'], search) || this.includesFilter(item['numero'], search))
+        && (this.departamentoEstado === 'TODOS' || item['estado'] === this.departamentoEstado));
+    }
+    if (this.resource === 'residentes') {
+      const search = this.normalizeFilter(this.residenteBusqueda);
+      return this.items.filter((item) =>
+        (!search || this.includesFilter(item['nombres'], search)
+          || this.includesFilter(item['apellidos'], search) || this.includesFilter(item['rut'], search))
+        && (this.residenteTipo === 'TODOS' || item['tipoResidente'] === this.residenteTipo)
+        && (this.residenteEstado === 'TODOS'
+          || (this.residenteEstado === 'ACTIVO' && item['activo'] === true)
+          || (this.residenteEstado === 'INACTIVO' && item['activo'] === false)));
+    }
+    if (this.resource === 'turnos') {
+      const search = this.normalizeFilter(this.turnoBusqueda);
+      return this.items.filter((item) =>
+        (!search || this.includesFilter(this.turnoUsuarioNombre(item), search))
+        && (this.turnoEstado === 'TODOS' || item['estado'] === this.turnoEstado));
+    }
+    if (this.resource === 'visitas') {
+      const search = this.normalizeFilter(this.visitaBusqueda);
+      const departmentSearch = this.normalizeFilter(this.visitaDepartamentoBusqueda);
+      return this.items.filter((item) =>
+        (!search || this.includesFilter(item['nombreVisitante'], search)
+          || this.includesFilter(item['documento'], search) || this.includesFilter(item['patente'], search))
+        && (this.visitaEstado === 'TODAS' || item['estado'] === this.visitaEstado)
+        && (!departmentSearch || this.includesFilter(this.visitaDepartamento(item), departmentSearch)));
+    }
     if (this.resource === 'encomiendas') {
       return this.encomiendaEstado === 'TODAS'
         ? this.items : this.items.filter((item) => item['estado'] === this.encomiendaEstado);
@@ -599,6 +797,14 @@ export class ManagementComponent implements OnInit {
         && (this.incidenciaCriticidad === 'TODAS' || item['criticidad'] === this.incidenciaCriticidad));
     }
     return this.items;
+  }
+
+  private normalizeFilter(value: unknown): string {
+    return String(value ?? '').trim().toLocaleLowerCase();
+  }
+
+  private includesFilter(value: unknown, search: string): boolean {
+    return this.normalizeFilter(value).includes(search);
   }
 
   onEncomiendaEstadoChange(value: string): void {
