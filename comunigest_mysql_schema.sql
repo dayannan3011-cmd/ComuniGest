@@ -194,12 +194,12 @@ CREATE TABLE IF NOT EXISTS incidencias (
 
 INSERT INTO perfiles (nombre, descripcion, activo)
 VALUES
-  ('ADMINISTRADOR', 'Administracion general del sistema', 1),
-  ('CONSERJE', 'Operacion diaria de conserjeria', 1)
+  ('ADMINISTRADOR', 'Administración general del sistema', 1),
+  ('CONSERJE', 'Operación diaria de conserjería', 1)
 ON DUPLICATE KEY UPDATE
   descripcion = CASE nombre
-    WHEN 'ADMINISTRADOR' THEN 'Administracion general del sistema'
-    WHEN 'CONSERJE' THEN 'Operacion diaria de conserjeria'
+    WHEN 'ADMINISTRADOR' THEN 'Administración general del sistema'
+    WHEN 'CONSERJE' THEN 'Operación diaria de conserjería'
     ELSE descripcion
   END,
   activo = 1;

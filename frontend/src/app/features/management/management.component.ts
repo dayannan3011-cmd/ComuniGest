@@ -54,7 +54,8 @@ interface SelectOption {
       } @else {
         <section class="editor-layout"
           [class.encomiendas-consulta]="resource === 'encomiendas' && !isConserje"
-          [class.incidencias-gestion]="resource === 'incidencias' && !isConserje">
+          [class.incidencias-gestion]="resource === 'incidencias' && !isConserje"
+          [class.perfiles-catalogo]="resource === 'perfiles'">
           @if (resource === 'turnos') {
             <section class="panel form-grid" [formGroup]="form">
               <h2>Control de turno</h2>
@@ -213,6 +214,7 @@ interface SelectOption {
               </form>
             }
           } @else {
+          @if (resource !== 'perfiles') {
           <form [formGroup]="form" (ngSubmit)="save()" class="panel form-grid">
             <h2>{{ editingId ? 'Editar registro' : 'Nuevo registro' }}</h2>
 
@@ -280,6 +282,7 @@ interface SelectOption {
               <button type="button" class="secondary-button" (click)="resetForm()">Limpiar</button>
             </div>
           </form>
+          }
           }
 
           <section class="panel table-panel">
@@ -355,6 +358,10 @@ interface SelectOption {
                       <th>Fecha y hora</th><th>Título</th><th>Descripción</th><th>Categoría</th><th>Criticidad</th>
                       <th>Registrada por</th><th>Estado</th><th>Fecha de resolución</th>
                       <th>Resolución</th><th>Acciones</th>
+                    </tr>
+                  } @else if (resource === 'perfiles') {
+                    <tr>
+                      <th>Nombre</th><th>Descripción</th><th>Estado</th>
                     </tr>
                   } @else if (resource === 'usuarios') {
                     <tr>
@@ -443,6 +450,12 @@ interface SelectOption {
                           @if (isConserje || item['estado'] === 'RESUELTA') { <span>—</span> }
                         </td>
                       </tr>
+                    } @else if (resource === 'perfiles') {
+                      <tr>
+                        <td>{{ item['nombre'] }}</td>
+                        <td>{{ item['descripcion'] }}</td>
+                        <td>{{ item['activo'] ? 'Activo' : 'Inactivo' }}</td>
+                      </tr>
                     } @else if (resource === 'usuarios') {
                       <tr>
                         <td>{{ item['nombre'] }}</td>
@@ -489,7 +502,8 @@ interface SelectOption {
   `,
   styles: [`
     .editor-layout.encomiendas-consulta,
-    .editor-layout.incidencias-gestion {
+    .editor-layout.incidencias-gestion,
+    .editor-layout.perfiles-catalogo {
       grid-template-columns: minmax(0, 1fr);
     }
 
@@ -594,11 +608,7 @@ export class ManagementComponent implements OnInit {
   }
 
   private readonly fieldMap: Record<string, FieldConfig[]> = {
-    perfiles: [
-      { key: 'nombre', label: 'Nombre', type: 'text', required: true },
-      { key: 'descripcion', label: 'Descripcion', type: 'textarea' },
-      { key: 'activo', label: 'Activo', type: 'checkbox' }
-    ],
+    perfiles: [],
     usuarios: [
       { key: 'nombre', label: 'Nombre completo', type: 'text', required: true, maxLength: 160 },
       { key: 'email', label: 'Correo electrónico', type: 'email', required: true, maxLength: 160 },

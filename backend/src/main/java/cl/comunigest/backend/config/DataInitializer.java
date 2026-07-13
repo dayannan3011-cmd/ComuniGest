@@ -18,16 +18,24 @@ public class DataInitializer {
                     .orElseGet(() -> {
                         Perfil perfil = new Perfil();
                         perfil.setNombre("ADMINISTRADOR");
-                        perfil.setDescripcion("Administracion general del sistema");
+                        perfil.setDescripcion("Administración general del sistema");
                         return perfilRepository.save(perfil);
                     });
+            if (!"Administración general del sistema".equals(admin.getDescripcion())) {
+                admin.setDescripcion("Administración general del sistema");
+                perfilRepository.save(admin);
+            }
 
-            perfilRepository.findByNombre("CONSERJE").orElseGet(() -> {
+            Perfil conserje = perfilRepository.findByNombre("CONSERJE").orElseGet(() -> {
                 Perfil perfil = new Perfil();
                 perfil.setNombre("CONSERJE");
-                perfil.setDescripcion("Operacion diaria de conserjeria");
+                perfil.setDescripcion("Operación diaria de conserjería");
                 return perfilRepository.save(perfil);
             });
+            if (!"Operación diaria de conserjería".equals(conserje.getDescripcion())) {
+                conserje.setDescripcion("Operación diaria de conserjería");
+                perfilRepository.save(conserje);
+            }
 
             usuarioRepository.findByEmailIgnoreCase("admin@comunigest.local").orElseGet(() -> {
                 Usuario usuario = new Usuario();
