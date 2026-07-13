@@ -52,7 +52,9 @@ interface SelectOption {
           }
         </section>
       } @else {
-        <section class="editor-layout" [class.encomiendas-consulta]="resource === 'encomiendas' && !isConserje">
+        <section class="editor-layout"
+          [class.encomiendas-consulta]="resource === 'encomiendas' && !isConserje"
+          [class.incidencias-gestion]="resource === 'incidencias' && !isConserje">
           @if (resource === 'turnos') {
             <section class="panel form-grid" [formGroup]="form">
               <h2>Control de turno</h2>
@@ -177,6 +179,39 @@ interface SelectOption {
               @if (success) { <p>{{ success }}</p> }
             </form>
             }
+          } @else if (resource === 'incidencias') {
+            @if (isConserje) {
+              <form [formGroup]="form" (ngSubmit)="registrarIncidencia()" class="panel form-grid">
+                <h2>Registrar incidencia</h2>
+                <label>Título
+                  <input type="text" formControlName="titulo" maxlength="140">
+                </label>
+                <label>Descripción
+                  <textarea formControlName="descripcion" maxlength="1000" rows="4"></textarea>
+                </label>
+                <label>Categoría
+                  <select formControlName="categoria">
+                    <option value="">Seleccione una categoría</option>
+                    @for (option of optionsFor(fields[2]); track option.value) {
+                      <option [value]="option.value">{{ option.label }}</option>
+                    }
+                  </select>
+                </label>
+                <label>Criticidad
+                  <select formControlName="criticidad">
+                    <option value="">Seleccione una criticidad</option>
+                    @for (option of optionsFor(fields[3]); track option.value) {
+                      <option [value]="option.value">{{ option.label }}</option>
+                    }
+                  </select>
+                </label>
+                <button type="submit" [disabled]="form.invalid || loading">
+                  {{ loading ? 'Registrando...' : 'Registrar incidencia' }}
+                </button>
+                @if (error) { <p class="form-error">{{ error }}</p> }
+                @if (success) { <p>{{ success }}</p> }
+              </form>
+            }
           } @else {
           <form [formGroup]="form" (ngSubmit)="save()" class="panel form-grid">
             <h2>{{ editingId ? 'Editar registro' : 'Nuevo registro' }}</h2>
@@ -248,7 +283,7 @@ interface SelectOption {
           }
 
           <section class="panel table-panel">
-            <h2>Registros</h2>
+            @if (resource !== 'incidencias') { <h2>Registros</h2> }
             @if (resource === 'encomiendas') {
               <label>
                 Estado
@@ -258,6 +293,33 @@ interface SelectOption {
                   <option value="ENTREGADA">Entregadas</option>
                 </select>
               </label>
+            } @else if (resource === 'incidencias') {
+              <h2>{{ isConserje ? 'Consulta de incidencias' : 'Gestión de incidencias' }}</h2>
+              <div class="incidencia-filtros">
+                <label>Estado
+                  <select [value]="incidenciaEstado" (change)="incidenciaEstado = $any($event.target).value">
+                    <option value="TODAS">Todas</option><option value="ABIERTA">Abiertas</option>
+                    <option value="EN_PROCESO">En proceso</option><option value="RESUELTA">Resueltas</option>
+                  </select>
+                </label>
+                <label>Categoría
+                  <select [value]="incidenciaCategoria" (change)="incidenciaCategoria = $any($event.target).value">
+                    <option value="TODAS">Todas</option><option value="SEGURIDAD">Seguridad</option>
+                    <option value="INFRAESTRUCTURA">Infraestructura</option><option value="ACCESO">Acceso</option>
+                    <option value="RUIDO O CONVIVENCIA">Ruido o convivencia</option>
+                    <option value="SERVICIOS">Servicios</option><option value="OTRO">Otro</option>
+                  </select>
+                </label>
+                <label>Criticidad
+                  <select [value]="incidenciaCriticidad" (change)="incidenciaCriticidad = $any($event.target).value">
+                    <option value="TODAS">Todas</option><option value="BAJA">Baja</option>
+                    <option value="MEDIA">Media</option><option value="ALTA">Alta</option>
+                    <option value="CRÍTICA">Crítica</option>
+                  </select>
+                </label>
+              </div>
+              @if (!isConserje && error) { <p class="form-error">{{ error }}</p> }
+              @if (!isConserje && success) { <p>{{ success }}</p> }
             }
             <div class="table-wrap">
               <table>
@@ -287,6 +349,12 @@ interface SelectOption {
                       <th>Empresa o repartidor</th><th>Fecha y hora de recepción</th><th>Recibida por</th>
                       <th>Fecha y hora de entrega</th><th>Entregada por</th><th>Entregada a</th>
                       <th>Estado</th><th>Acciones</th>
+                    </tr>
+                  } @else if (resource === 'incidencias') {
+                    <tr>
+                      <th>Fecha y hora</th><th>Título</th><th>Descripción</th><th>Categoría</th><th>Criticidad</th>
+                      <th>Registrada por</th><th>Estado</th><th>Fecha de resolución</th>
+                      <th>Resolución</th><th>Acciones</th>
                     </tr>
                   } @else if (resource === 'usuarios') {
                     <tr>
@@ -355,6 +423,26 @@ interface SelectOption {
                           } @else { <span>—</span> }
                         </td>
                       </tr>
+                    } @else if (resource === 'incidencias') {
+                      <tr>
+                        <td>{{ $any(item['fechaRegistro']) | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td>{{ item['titulo'] }}</td>
+                        <td class="incidencia-descripcion">{{ item['descripcion'] }}</td>
+                        <td>{{ item['categoria'] }}</td><td>{{ item['criticidad'] }}</td>
+                        <td>{{ incidenciaUsuario(item, 'registradaPor') }}</td>
+                        <td>{{ incidenciaEstadoLabel(item['estado']) }}</td>
+                        <td>{{ item['fechaResolucion'] ? ($any(item['fechaResolucion']) | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</td>
+                        <td class="incidencia-resolucion">{{ item['resolucion'] || '—' }}</td>
+                        <td class="actions">
+                          @if (!isConserje && item['estado'] === 'ABIERTA') {
+                            <button type="button" class="secondary-button" (click)="iniciarGestionIncidencia(item)">Iniciar gestión</button>
+                          }
+                          @if (!isConserje && (item['estado'] === 'ABIERTA' || item['estado'] === 'EN_PROCESO')) {
+                            <button type="button" (click)="resolverIncidencia(item)">Resolver</button>
+                          }
+                          @if (isConserje || item['estado'] === 'RESUELTA') { <span>—</span> }
+                        </td>
+                      </tr>
                     } @else if (resource === 'usuarios') {
                       <tr>
                         <td>{{ item['nombre'] }}</td>
@@ -400,8 +488,28 @@ interface SelectOption {
     </main>
   `,
   styles: [`
-    .editor-layout.encomiendas-consulta {
+    .editor-layout.encomiendas-consulta,
+    .editor-layout.incidencias-gestion {
       grid-template-columns: minmax(0, 1fr);
+    }
+
+    .incidencia-filtros {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      margin-bottom: 1rem;
+    }
+
+    .incidencia-descripcion {
+      min-width: 20rem;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .incidencia-resolucion {
+      min-width: 18rem;
+      overflow-wrap: anywhere;
+      white-space: normal;
     }
 
     [role="combobox"] {
@@ -450,6 +558,10 @@ export class ManagementComponent implements OnInit {
   error = '';
   success = '';
   encomiendaEstado: 'TODAS' | 'PENDIENTE' | 'ENTREGADA' = 'TODAS';
+  incidenciaEstado = 'TODAS';
+  incidenciaCategoria = 'TODAS';
+  incidenciaCriticidad = 'TODAS';
+  private readonly resolucionesPendientes: Record<number, string> = {};
 
   readonly form: UntypedFormGroup = this.fb.group({});
 
@@ -462,8 +574,17 @@ export class ManagementComponent implements OnInit {
   }
 
   get visibleItems(): Record<string, unknown>[] {
-    if (this.resource !== 'encomiendas' || this.encomiendaEstado === 'TODAS') return this.items;
-    return this.items.filter((item) => item['estado'] === this.encomiendaEstado);
+    if (this.resource === 'encomiendas') {
+      return this.encomiendaEstado === 'TODAS'
+        ? this.items : this.items.filter((item) => item['estado'] === this.encomiendaEstado);
+    }
+    if (this.resource === 'incidencias') {
+      return this.items.filter((item) =>
+        (this.incidenciaEstado === 'TODAS' || item['estado'] === this.incidenciaEstado)
+        && (this.incidenciaCategoria === 'TODAS' || item['categoria'] === this.incidenciaCategoria)
+        && (this.incidenciaCriticidad === 'TODAS' || item['criticidad'] === this.incidenciaCriticidad));
+    }
+    return this.items;
   }
 
   onEncomiendaEstadoChange(value: string): void {
@@ -529,11 +650,17 @@ export class ManagementComponent implements OnInit {
       { key: 'empresaRepartidor', label: 'Empresa o repartidor', type: 'text', maxLength: 160 }
     ],
     incidencias: [
-      { key: 'titulo', label: 'Titulo', type: 'text', required: true },
-      { key: 'descripcion', label: 'Descripcion', type: 'textarea', required: true },
-      { key: 'categoria', label: 'Categoria', type: 'text' },
-      { key: 'criticidad', label: 'Criticidad', type: 'text' },
-      { key: 'registradaPorId', label: 'ID usuario registra', type: 'number' }
+      { key: 'titulo', label: 'Título', type: 'text', required: true, maxLength: 140 },
+      { key: 'descripcion', label: 'Descripción', type: 'textarea', required: true, maxLength: 1000 },
+      { key: 'categoria', label: 'Categoría', type: 'select', required: true, options: [
+        { value: 'SEGURIDAD', label: 'Seguridad' }, { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
+        { value: 'ACCESO', label: 'Acceso' }, { value: 'RUIDO O CONVIVENCIA', label: 'Ruido o convivencia' },
+        { value: 'SERVICIOS', label: 'Servicios' }, { value: 'OTRO', label: 'Otro' }
+      ] },
+      { key: 'criticidad', label: 'Criticidad', type: 'select', required: true, options: [
+        { value: 'BAJA', label: 'Baja' }, { value: 'MEDIA', label: 'Media' },
+        { value: 'ALTA', label: 'Alta' }, { value: 'CRÍTICA', label: 'Crítica' }
+      ] }
     ]
   };
 
@@ -580,6 +707,10 @@ export class ManagementComponent implements OnInit {
     }
     if (this.resource === 'encomiendas') {
       this.loadEncomiendas(showRefreshFeedback);
+      return;
+    }
+    if (this.resource === 'incidencias') {
+      this.loadIncidencias(showRefreshFeedback);
       return;
     }
     if (this.resource === 'reportes') {
@@ -912,6 +1043,103 @@ export class ManagementComponent implements OnInit {
       ? String((usuario as { nombre?: unknown }).nombre ?? '—') : '—';
   }
 
+  registrarIncidencia(): void {
+    const user = this.auth.currentUser();
+    if (!user) { this.error = 'El usuario no existe.'; return; }
+    if (this.form.invalid) return;
+    const raw = this.form.getRawValue();
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+    this.api.create<Record<string, unknown>>('incidencias/registro', {
+      usuarioId: user.id,
+      titulo: raw['titulo'],
+      descripcion: raw['descripcion'],
+      categoria: raw['categoria'],
+      criticidad: raw['criticidad']
+    }).pipe(switchMap(() => this.incidenciaListRequest())).subscribe({
+      next: (items) => {
+        this.items = items;
+        this.loading = false;
+        this.resetForm();
+        this.success = 'Incidencia registrada correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = this.incidenciaErrorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  iniciarGestionIncidencia(item: Record<string, unknown>): void {
+    const user = this.auth.currentUser();
+    if (!user) { this.error = 'El usuario no existe.'; return; }
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+    this.api.patch<Record<string, unknown>>('incidencias', Number(item['id']), 'iniciar-gestion', {
+      usuarioId: user.id
+    }).pipe(switchMap(() => this.incidenciaListRequest())).subscribe({
+      next: (items) => {
+        this.items = items;
+        this.loading = false;
+        this.success = 'Incidencia puesta en proceso correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = this.incidenciaErrorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  resolverIncidencia(item: Record<string, unknown>): void {
+    const user = this.auth.currentUser();
+    if (!user) { this.error = 'El usuario no existe.'; return; }
+    const id = Number(item['id']);
+    const resolucion = window.prompt('Resolución o medida tomada', this.resolucionesPendientes[id] ?? '');
+    if (resolucion === null) return;
+    this.resolucionesPendientes[id] = resolucion;
+    if (!resolucion.trim()) {
+      this.error = 'Debes indicar la resolución o medida tomada.';
+      return;
+    }
+    if (!window.confirm(`¿Confirmas que deseas marcar como resuelta la incidencia "${String(item['titulo'] ?? '')}"?`)) return;
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+    this.api.patch<Record<string, unknown>>('incidencias', id, 'resolver', {
+      usuarioId: user.id,
+      resolucion
+    }).pipe(switchMap(() => this.incidenciaListRequest())).subscribe({
+      next: (items) => {
+        delete this.resolucionesPendientes[id];
+        this.items = items;
+        this.loading = false;
+        this.success = 'Incidencia resuelta correctamente.';
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = this.incidenciaErrorMessage(error);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  incidenciaUsuario(item: Record<string, unknown>, key: string): string {
+    const usuario = item[key];
+    return usuario && typeof usuario === 'object' && 'nombre' in usuario
+      ? String((usuario as { nombre?: unknown }).nombre ?? '—') : '—';
+  }
+
+  incidenciaEstadoLabel(value: unknown): string {
+    return value === 'EN_PROCESO' ? 'EN PROCESO' : String(value ?? '');
+  }
+
   registrarSalidaVisita(item: Record<string, unknown>): void {
     const user = this.auth.currentUser();
     if (!user) {
@@ -1143,6 +1371,27 @@ export class ManagementComponent implements OnInit {
     });
   }
 
+  private loadIncidencias(showRefreshFeedback: boolean): void {
+    this.incidenciaListRequest().subscribe({
+      next: (items) => {
+        this.items = items;
+        this.finishRefresh(showRefreshFeedback, true);
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        this.error = this.incidenciaErrorMessage(error);
+        this.finishRefresh(showRefreshFeedback, false);
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private incidenciaListRequest(): Observable<Record<string, unknown>[]> {
+    return this.isConserje
+      ? this.api.path<Record<string, unknown>[]>('incidencias/mes-actual')
+      : this.api.list<Record<string, unknown>>('incidencias');
+  }
+
   private encomiendaListRequest(): Observable<Record<string, unknown>[]> {
     return this.isConserje
       ? this.api.path<Record<string, unknown>[]>('encomiendas/mes-actual')
@@ -1264,6 +1513,16 @@ export class ManagementComponent implements OnInit {
       }
     }
     return 'No se pudo guardar el registro. Revisa los datos ingresados.';
+  }
+
+  private incidenciaErrorMessage(error: unknown): string {
+    const status = error && typeof error === 'object' && 'status' in error
+      ? Number((error as { status?: unknown }).status) : 0;
+    const message = this.errorMessage(error);
+    if (status >= 500 || /(sql|constraint|column|jdbc|hibernate|value not permitted)/i.test(message)) {
+      return 'No se pudo completar la operación. Intenta nuevamente.';
+    }
+    return message;
   }
 
   private finishRefresh(showFeedback: boolean, successful: boolean): void {

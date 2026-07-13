@@ -164,15 +164,30 @@ CREATE TABLE IF NOT EXISTS incidencias (
   categoria VARCHAR(80) NULL,
   criticidad VARCHAR(40) NOT NULL DEFAULT 'MEDIA',
   registrada_por_id BIGINT NULL,
+  turno_registro_id BIGINT NULL,
   fecha_registro DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  fecha_cierre DATETIME(6) NULL,
+  fecha_resolucion DATETIME(6) NULL,
+  usuario_resuelve_id BIGINT NULL,
+  resolucion VARCHAR(1000) NULL,
   estado VARCHAR(20) NOT NULL DEFAULT 'ABIERTA',
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_incidencias_registrada_por_id (registrada_por_id),
+  KEY idx_incidencias_turno_registro_id (turno_registro_id),
+  KEY idx_incidencias_usuario_resuelve_id (usuario_resuelve_id),
   KEY idx_incidencias_estado (estado),
-  CONSTRAINT chk_incidencias_estado CHECK (estado IN ('ABIERTA', 'CERRADA')),
+  CONSTRAINT chk_incidencias_estado CHECK (estado IN ('ABIERTA', 'EN_PROCESO', 'RESUELTA')),
   CONSTRAINT fk_incidencias_usuarios
     FOREIGN KEY (registrada_por_id) REFERENCES usuarios (id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL,
+  CONSTRAINT fk_incidencias_turno_registro
+    FOREIGN KEY (turno_registro_id) REFERENCES turnos (id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_incidencias_usuario_resuelve
+    FOREIGN KEY (usuario_resuelve_id) REFERENCES usuarios (id)
     ON UPDATE CASCADE
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

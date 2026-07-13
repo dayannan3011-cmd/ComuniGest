@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class Incidencia {
 
     public enum EstadoIncidencia {
-        ABIERTA, CERRADA
+        ABIERTA, EN_PROCESO, RESUELTA
     }
 
     @Id
@@ -35,14 +35,41 @@ public class Incidencia {
     @JoinColumn(name = "registrada_por_id")
     private Usuario registradaPor;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "turno_registro_id")
+    private Turno turnoRegistro;
+
     @Column(nullable = false)
     private LocalDateTime fechaRegistro = LocalDateTime.now();
 
-    private LocalDateTime fechaCierre;
+    private LocalDateTime fechaResolucion;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "usuario_resuelve_id")
+    private Usuario usuarioResuelve;
+
+    @Column(length = 1000)
+    private String resolucion;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private EstadoIncidencia estado = EstadoIncidencia.ABIERTA;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime creadoEn;
+
+    @Column(nullable = false)
+    private LocalDateTime actualizadoEn;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        creadoEn = now;
+        actualizadoEn = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() { actualizadoEn = LocalDateTime.now(); }
 
     public Long getId() {
         return id;
@@ -92,6 +119,9 @@ public class Incidencia {
         this.registradaPor = registradaPor;
     }
 
+    public Turno getTurnoRegistro() { return turnoRegistro; }
+    public void setTurnoRegistro(Turno turnoRegistro) { this.turnoRegistro = turnoRegistro; }
+
     public LocalDateTime getFechaRegistro() {
         return fechaRegistro;
     }
@@ -100,13 +130,12 @@ public class Incidencia {
         this.fechaRegistro = fechaRegistro;
     }
 
-    public LocalDateTime getFechaCierre() {
-        return fechaCierre;
-    }
-
-    public void setFechaCierre(LocalDateTime fechaCierre) {
-        this.fechaCierre = fechaCierre;
-    }
+    public LocalDateTime getFechaResolucion() { return fechaResolucion; }
+    public void setFechaResolucion(LocalDateTime fechaResolucion) { this.fechaResolucion = fechaResolucion; }
+    public Usuario getUsuarioResuelve() { return usuarioResuelve; }
+    public void setUsuarioResuelve(Usuario usuarioResuelve) { this.usuarioResuelve = usuarioResuelve; }
+    public String getResolucion() { return resolucion; }
+    public void setResolucion(String resolucion) { this.resolucion = resolucion; }
 
     public EstadoIncidencia getEstado() {
         return estado;
@@ -115,4 +144,7 @@ public class Incidencia {
     public void setEstado(EstadoIncidencia estado) {
         this.estado = estado;
     }
+
+    public LocalDateTime getCreadoEn() { return creadoEn; }
+    public LocalDateTime getActualizadoEn() { return actualizadoEn; }
 }
