@@ -29,7 +29,7 @@ import { AuthService } from '../../core/auth.service';
       <section class="workspace">
         <header class="topbar">
           <div>
-            <span>Sesion local</span>
+            <span>Sesión activa</span>
             <strong>{{ auth.currentUser()?.nombre }}</strong>
           </div>
         </header>
