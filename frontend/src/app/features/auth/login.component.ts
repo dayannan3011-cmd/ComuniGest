@@ -1,12 +1,13 @@
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   template: `
     <main class="login-page">
       <section class="login-panel">
@@ -33,6 +34,7 @@ import { AuthService } from '../../core/auth.service';
           <button type="submit" [disabled]="form.invalid || loading">
             {{ loading ? 'Ingresando...' : 'Ingresar' }}
           </button>
+          <a routerLink="/recuperar-clave">¿Olvidaste tu contraseña?</a>
         </form>
 
       </section>

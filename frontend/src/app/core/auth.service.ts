@@ -3,7 +3,7 @@ import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { LoginResponse } from './models';
+import { LoginResponse, MessageResponse } from './models';
 import { isJwtUsable } from './jwt.util';
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +21,19 @@ export class AuthService {
         localStorage.setItem(this.tokenKey, response.token);
       })
     );
+  }
+
+  recuperarClave(email: string): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${environment.apiUrl}/auth/recuperar-clave`, { email });
+  }
+
+  restablecerClave(token: string, nuevaClave: string,
+                    confirmacionClave: string): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${environment.apiUrl}/auth/restablecer-clave`, {
+      token,
+      nuevaClave,
+      confirmacionClave
+    });
   }
 
   logout(): void {

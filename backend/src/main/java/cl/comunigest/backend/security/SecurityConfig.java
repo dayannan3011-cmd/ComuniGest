@@ -30,7 +30,8 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login",
+                                "/api/auth/recuperar-clave", "/api/auth/restablecer-clave").permitAll()
                         .requestMatchers("/h2-console/**").denyAll()
                         .requestMatchers("/api/perfiles/**", "/api/usuarios/**", "/api/reportes/**")
                             .hasRole("ADMINISTRADOR")
