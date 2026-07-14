@@ -1,11 +1,13 @@
 package cl.comunigest.backend.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
+@ConditionalOnProperty(name = "comunigest.mail.provider", havingValue = "smtp", matchIfMissing = true)
 public class SmtpCorreoRecuperacionService implements CorreoRecuperacionService {
 
     private final JavaMailSender mailSender;
