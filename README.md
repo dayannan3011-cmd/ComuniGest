@@ -147,7 +147,7 @@ ComuniGest incorpora las siguientes medidas de seguridad:
 
 ## Configuración JWT
 
-El secreto JWT puede configurarse mediante la variable de entorno:
+Para ejecutar el backend con el perfil MySQL es obligatorio definir el secreto JWT mediante la variable de entorno:
 
 ```text
 COMUNIGEST_JWT_SECRET
@@ -159,7 +159,7 @@ Ejemplo en Windows PowerShell:
 $env:COMUNIGEST_JWT_SECRET="reemplazar-por-un-secreto-seguro"
 ```
 
-El proyecto incluye un valor demostrativo para facilitar la ejecución académica local. Para un entorno productivo debe definirse un secreto seguro mediante variable de entorno.
+El perfil H2 incluye un valor exclusivo para pruebas locales. El perfil MySQL no contiene ningún valor predeterminado.
 
 Características del token:
 
@@ -171,6 +171,21 @@ Características del token:
 - Fecha de vencimiento
 - Validación de firma
 - Validación del estado activo de la cuenta
+
+## Configuración de correo
+
+La recuperación de contraseña utiliza Spring Mail. La configuración SMTP y la URL del frontend se reciben exclusivamente mediante variables de entorno:
+
+```text
+COMUNIGEST_MAIL_HOST
+COMUNIGEST_MAIL_PORT
+COMUNIGEST_MAIL_USERNAME
+COMUNIGEST_MAIL_PASSWORD
+COMUNIGEST_MAIL_FROM
+COMUNIGEST_FRONTEND_URL
+```
+
+El backend no intenta conectarse al servidor SMTP durante el arranque. El enlace de recuperación enviado apunta a `${COMUNIGEST_FRONTEND_URL}/restablecer-clave?token=TOKEN` y vence después de 30 minutos.
 
 ## Requisitos previos
 
@@ -271,9 +286,11 @@ Al ejecutar el proyecto con una base nueva, el backend inicializa los perfiles y
 
 ```text
 POST /api/auth/login
+POST /api/auth/recuperar-clave
+POST /api/auth/restablecer-clave
 ```
 
-El inicio de sesión es público. El resto de la API requiere un JWT válido.
+Los tres endpoints de autenticación son públicos. La solicitud de recuperación siempre entrega el mismo mensaje, independientemente de si el correo existe.
 
 ### Perfiles
 
@@ -399,6 +416,9 @@ El backend incluye pruebas automatizadas para:
 - prevención de suplantación mediante `usuarioId`
 - inicio y cierre de turnos
 - gestión y resolución de incidencias
+- solicitud de recuperación con correo existente e inexistente
+- restablecimiento con token válido, vencido, utilizado y manipulado
+- rechazo cuando las claves de restablecimiento no coinciden
 
 Para ejecutar las pruebas:
 
@@ -451,13 +471,13 @@ Actualmente se encuentran implementados:
 - Reportes
 - Validaciones en frontend y backend
 - Pruebas automatizadas de autenticación y seguridad
+- Recuperación segura de contraseña mediante correo electrónico
 - Perfil H2 opcional para desarrollo y pruebas
 
 ## Mejoras futuras
 
 - Despliegue en hosting
 - Configuración HTTPS
-- Recuperación de contraseña mediante correo electrónico
 - Implementación de refresh tokens
 - Uso de cookies `HttpOnly`
 - Limitación de intentos de inicio de sesión
@@ -476,6 +496,8 @@ comunigest_mysql_schema.sql
 
 contiene la estructura SQL utilizada por MySQL.
 
+Para una base `comunigest_db` ya existente, el archivo `comunigest_mysql_recuperacion_clave_incremental.sql` agrega únicamente la tabla de tokens de recuperación.
+
 La base de datos predeterminada es:
 
 ```text
@@ -486,6 +508,7 @@ El esquema incluye:
 
 - perfiles
 - usuarios
+- tokens de recuperación de contraseña
 - departamentos
 - residentes
 - turnos

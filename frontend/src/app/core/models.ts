@@ -59,3 +59,7 @@ export interface LoginResponse {
   activo: boolean;
   token: string;
 }
+
+export interface MessageResponse {
+  message: string;
+}

@@ -2,11 +2,15 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
 import { adminGuard } from './core/role.guard';
 import { LoginComponent } from './features/auth/login.component';
+import { RecuperarClaveComponent } from './features/auth/recuperar-clave.component';
+import { RestablecerClaveComponent } from './features/auth/restablecer-clave.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { ManagementComponent } from './features/management/management.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'recuperar-clave', component: RecuperarClaveComponent },
+  { path: 'restablecer-clave', component: RestablecerClaveComponent },
   {
     path: '',
     component: DashboardComponent,

@@ -17,9 +17,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final Set<String> PUBLIC_POST_PATHS = Set.of(
+            "/api/auth/login",
+            "/api/auth/recuperar-clave",
+            "/api/auth/restablecer-clave");
+
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
     private final JsonAuthenticationEntryPoint authenticationEntryPoint;
@@ -29,6 +35,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
         this.usuarioRepository = usuarioRepository;
         this.authenticationEntryPoint = authenticationEntryPoint;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return "POST".equalsIgnoreCase(request.getMethod())
+                && PUBLIC_POST_PATHS.contains(request.getRequestURI());
     }
 
     @Override
